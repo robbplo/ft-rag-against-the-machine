@@ -1,0 +1,10 @@
+[project]
+name = "ft-rag-against-the-machine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flake8>=7.3.0",
+    "mypy>=1.19.1",
+]
