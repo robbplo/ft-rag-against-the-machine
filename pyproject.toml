@@ -7,9 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "fire>=0.7.1",
     "flake8>=7.3.0",
+    "langchain>=1.2.10",
+    "langchain-community>=0.4.1",
     "mypy>=1.19.1",
     "torch>=2.10.0",
     "tqdm>=4.67.3",
+    "unstructured>=0.21.5",
 ]
 
 [tool.uv.sources]
