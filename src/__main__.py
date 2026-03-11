@@ -3,6 +3,11 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.retrievers import BM25Retriever
+from langchain_huggingface import HuggingFacePipeline
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from transformers import pipeline
 
 def main():
 
@@ -37,6 +42,47 @@ def main():
 
 
     # Generation
+    print("setting up generation")
+    pipe = pipeline(
+        "text-generation",
+        model="Qwen/Qwen3-0.6B",
+        max_new_tokens=512,
+    )
+    llm = HuggingFacePipeline(pipeline=pipe)
+
+    prompt = PromptTemplate.from_template(
+        """# vLLM code expert
+        ## Role
+        You are an expert on the vLLM codebase. You answer questions from users who are trying to
+        work with the repository. Your answers will be based on the given code samples. Answer in a
+        technical manner.
+
+        ## Code samples
+        {context}
+
+        ## Question
+        {question}
+
+        ## Answer
+        """
+    )
+
+    def format_docs(docs):
+        return "\n\n".join(d.page_content for d in docs)
+
+    rag_chain = (
+        {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    # answer = rag_chain.invoke(question)
+
+    print(question)
+    stream = rag_chain.stream(question)
+    for chunk in stream:
+        print(chunk, end="", flush=True)
 
 
 
