@@ -1,21 +1,13 @@
-from typing import cast
+from src.answer_generator import AnswerGenerator
+import re
 from pathlib import Path
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders import DirectoryLoader
 from langchain_community.retrievers import BM25Retriever
-from langchain_huggingface import HuggingFacePipeline
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from transformers import pipeline, GenerationConfig
 
-def main():
-
-    # Load documents
+def load_documents() -> list[Document]:
     glob = Path.glob(Path("./data/vllm-0.10.1"), "**/[!.]*.py")
     documents: list[Document] = []
-    print("loading documents")
     for path in glob:
         content = ""
         with open(path) as file:
@@ -23,103 +15,61 @@ def main():
         document = Document(page_content=content)
         document.metadata["path"] = path
         documents.append(document)
+    return documents
 
-
-    # Split text
-    print("splitting documents")
+def split_documents(documents) -> list[Document]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=2000,
         chunk_overlap=200,
+        add_start_index=True,
     )
     split_documents = splitter.split_documents(documents)
+    for document in split_documents:
+        start_index = document.metadata.get("start_index")
+        if isinstance(start_index, int) and document.page_content:
+            document.metadata["end_index"] = start_index + len(document.page_content) - 1
+    return split_documents
 
-    # Retrieval
-    retriever = BM25Retriever.from_documents(split_documents)
-    retriever.k = 5
-    question = "What is the default lora_int_id value when lora_request is None in vLLM's sequence?"
-    results = retriever.invoke(question)
-    # print(results[0])
-    print(len(documents))
+def search_documents(documents, query) -> list[Document]:
+    retriever = BM25Retriever.from_documents(documents)
+    retriever.k = 10
+    results = retriever.invoke(query)
+    return results
 
-
-    # Generation
-    print("setting up generation")
-    pipe = pipeline(
-        "text-generation",
-        # model="Qwen/Qwen3-0.6B",
-        model="Qwen/Qwen3.5-0.8B",
-    )
-    config: GenerationConfig = cast(GenerationConfig, pipe.generation_config)
-    config.max_length = None
-    config.max_new_tokens = 1024
-    config.do_sample = False
-    llm = HuggingFacePipeline(pipeline=pipe)
-
-    prompt = PromptTemplate.from_template(
-        """<|im_start|>system
-You are a vLLM codebase expert answering questions using only the provided code samples.
-Prioritize correctness over completeness.
-
-Rules:
-- Base every factual claim on the retrieved code context.
-- If the answer is not fully supported by the code samples, say that explicitly and describe what is uncertain.
-- Do not invent APIs, behaviors, defaults, control flow, or implementation details.
-- Start with the direct answer in the first sentence, then give a brief code-based explanation.
-- For code questions, trace the relevant logic step by step using the exact identifiers from the code.
-- When a value depends on a condition or branch, explain the condition precisely, including whether conditions are AND, OR, or fallback checks.
-- If the question asks for a default, distinguish between:
-  1. a signature or field default,
-  2. a fallback used when a value is None or missing,
-  3. a constant passed into another call.
-- For default-value questions, return the concrete value exactly as written in code when possible.
-- For "what happens when" questions, describe the exact branch outcome: returned value, raised exception, assertion, mutation, or skipped behavior.
-- For condition questions, enumerate every required condition instead of summarizing loosely.
-- For supported values, enums, types, or registered names, list all items present in the retrieved code and do not omit values.
-- For shape, dtype, annotation, and parameter-type questions, report the exact structure and type information shown in code.
-- For error or assertion questions, name the exact exception or assertion and the trigger condition.
-- If the code uses attribute access with a fallback such as getattr(..., default) or an if x is None branch, answer with the effective value produced by that path.
-- Keep the answer technical, concise, and focused on the repository behavior shown in the context.
-- Do not mention information outside the provided code samples.
-
-Code samples:
-{context}
-<|im_end|>
-<|im_start|>user
-{question}
-<|im_end|>
-<|im_start|>assistant
-"""
-    )
-
-    def format_docs(docs):
-        return "\n\n".join(d.page_content for d in docs)
-
-    rag_chain = (
-        {"context": retriever | format_docs, "question": RunnablePassthrough()}
-        | prompt
-        | llm
-        | StrOutputParser()
-    )
-
-    # answer = rag_chain.invoke(question)
-
-    print(question)
-    stream = rag_chain.stream(question)
-    for chunk in stream:
+def answer_question(generator: AnswerGenerator, question: str):
+    ouptut = ""
+    for chunk in generator.stream(question):
         print(chunk, end="", flush=True)
+        ouptut += chunk
+
+    answer = re.sub(r"[\s\S]*<\/think>([\s\S]*)", r"\1", ouptut).strip()
+    return answer
 
 
+def main():
+    question = "What activation formats does the fused batched MoE layer return in vLLM?"
 
+    print("loading documents")
+    documents = load_documents()
 
-    # i = 0
-    # for document in loader.lazy_load():
-    #     print(len(document.page_content))
-    #     i +=1
-    #     if i == 10:
-    #         break
-    # loader.loader_kwargs
+    print("splitting documents")
+    split_docs = split_documents(documents)
 
+    print("searching documents")
+    results = search_documents(split_docs, question)
+
+    print("setting up generation")
+    generator = AnswerGenerator(
+        model_id="Qwen/Qwen3.5-0.8B",
+        documents=results
+    )
+
+    print("starting answer stream")
+    answer = answer_question(generator, question)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(0)
