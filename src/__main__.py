@@ -30,12 +30,6 @@ def split_documents(documents) -> list[Document]:
             document.metadata["end_index"] = start_index + len(document.page_content) - 1
     return split_documents
 
-def search_documents(documents, query) -> list[Document]:
-    retriever = BM25Retriever.from_documents(documents)
-    retriever.k = 10
-    results = retriever.invoke(query)
-    return results
-
 def answer_question(generator: AnswerGenerator, question: str):
     ouptut = ""
     for chunk in generator.stream(question):
@@ -56,12 +50,13 @@ def main():
     split_docs = split_documents(documents)
 
     print("searching documents")
-    results = search_documents(split_docs, question)
+    retriever = BM25Retriever.from_documents(split_docs)
+    retriever.k = 5
 
     print("setting up generation")
     generator = AnswerGenerator(
-        model_id="Qwen/Qwen3.5-0.8B",
-        documents=results
+        model_id="Qwen/Qwen3-0.6B",
+        retriever=retriever
     )
 
     print("starting answer stream")

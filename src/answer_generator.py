@@ -1,3 +1,4 @@
+from langchain_core.retrievers import RetrieverLike
 from typing import cast
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFacePipeline
@@ -43,39 +44,34 @@ def format_docs(docs):
     return "\n\n".join(d.page_content for d in docs)
 
 class AnswerGenerator:
-    def __init__(self, model_id: str, documents: list[Document]):
+    def __init__(self, model_id: str, retriever: RetrieverLike):
+        self.retriever: RetrieverLike = retriever
         model_config = AutoConfig.from_pretrained(model_id)
         model_config.tie_word_embeddings = False
         model = AutoModelForCausalLM.from_pretrained(model_id, config=model_config)
         tokenizer = AutoTokenizer.from_pretrained(model_id)
 
-        pipe = pipeline(
+        self.pipe = pipeline(
             "text-generation",
-            model=model_id,
-            # model=model,
-            # tokenizer=model_id,
+            # model=model_id,
+            model=model,
+            tokenizer=model_id,
         )
-        generation_config: GenerationConfig = cast(GenerationConfig, pipe.generation_config)
+        generation_config: GenerationConfig = self.pipe.generation_config
         generation_config.max_length = None
         generation_config.max_new_tokens = 1024
         generation_config.do_sample = False
-        llm = HuggingFacePipeline(pipeline=pipe)
 
-        prompt = PromptTemplate.from_template(PROMPT_TEMPLATE).partial(
-            documents=format_docs(documents)
-        )
 
-        self.chain = (
-            {"question": RunnablePassthrough()}
+    def stream(self, question):
+        documents = self.retriever.invoke(question)
+        prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
+        chain = (
+            {"documents": self.retriever | format_docs, "question": RunnablePassthrough()}
             | prompt
-            | llm
+            | HuggingFacePipeline(pipeline=self.pipe)
             | StrOutputParser()
         )
 
-    def stream(self, question):
-        return self.chain.stream(question)
+        return chain.stream(question)
 
-
-
-
-    # answer = rag_chain.invoke(question)
