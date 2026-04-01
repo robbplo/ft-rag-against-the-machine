@@ -6,7 +6,8 @@ from src.index.index import IndexStrategy
 import fire
 
 class CLI:
-    def index(strategy: IndexStrategy = IndexStrategy.BM25):
+    def index(self):
+        strategy: IndexStrategy = IndexStrategy.BM25
         dataset = PythonDataset(path=Path('data/vllm-0.10.1/'));
         index = BM25Index(
                 path=Path('data/index/bm25_index'),
@@ -14,24 +15,29 @@ class CLI:
                 )
         index.generate()
 
-    @staticmethod
-    def search(query):
+    def search(self, query: str, k: int = 5):
+        dataset = PythonDataset(path=Path('data/vllm-0.10.1/'))
+        index = BM25Index(
+                path=Path('data/index/bm25_index'),
+                dataset=dataset,
+                )
+        index.load()
+        results = index.search(query, k=k)
+        for doc in results:
+            print(f"--- {doc.path} [{doc.start_index}:{doc.end_index}] ---")
+            print(doc.content[:100])
+            print()
+
+    def search_dataset(self):
         pass
 
-    @staticmethod
-    def search_dataset(query):
+    def answer(self):
         pass
 
-    @staticmethod
-    def answer(query):
+    def answer_dataset(self):
         pass
 
-    @staticmethod
-    def answer_dataset(query):
-        pass
-
-    @staticmethod
-    def evaluate():
+    def evaluate(self):
         pass
 
 if __name__ == "__main__":

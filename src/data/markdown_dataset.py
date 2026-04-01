@@ -1,5 +1,6 @@
 from src.data.document import Document
 from src.data.dataset import Dataset
+from pathlib import Path
 
 class MarkdownDataset(Dataset):
     def getDocuments(self) -> list[Document]:
