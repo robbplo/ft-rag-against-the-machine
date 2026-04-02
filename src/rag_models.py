@@ -39,4 +39,4 @@ class StudentSearchResults(BaseModel):
 
 
 class StudentSearchResultsAndAnswer(StudentSearchResults):
-    search_results: List[MinimalAnswer]  # type: ignore[assignment]
+    search_results: List[MinimalAnswer]

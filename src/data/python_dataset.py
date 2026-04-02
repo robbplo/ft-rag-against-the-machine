@@ -5,10 +5,13 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 
 class PythonDataset(Dataset):
     def getDocuments(self) -> list[Document]:
-        glob = Path.glob(self.path, "**/[!.]*.py")
+        pyglob = Path.glob(self.path, "**/[!.]*.py")
+        mdglob = Path.glob(self.path, "**/[!.]*.md")
+        paths = list(pyglob) + list(mdglob)
+
         splitter = RecursiveCharacterTextSplitter.from_language(Language.PYTHON, chunk_size=2000)
         documents: list[Document] = []
-        for path in glob:
+        for path in paths:
             with open(path) as file:
                 content = file.read()
             for chunk in splitter.create_documents([content]):

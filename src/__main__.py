@@ -2,6 +2,7 @@ from src.data.python_dataset import PythonDataset
 from src.rag_models import (
     RagDataset, MinimalSource, MinimalSearchResults, StudentSearchResults
 )
+from src.evaluator import evaluate as run_evaluate
 from pathlib import Path
 from src.data.dataset import Dataset
 from src.index.bm25_index import BM25Index
@@ -81,8 +82,14 @@ class CLI:
     def answer_dataset(self):
         pass
 
-    def evaluate(self):
-        pass
+    def evaluate(
+        self,
+        student_answer_path: str,
+        dataset_path: str,
+        k: int = 10,
+    ) -> None:
+        """Evaluate search results against ground truth using recall@k metric."""
+        run_evaluate(student_answer_path, dataset_path, k)
 
 if __name__ == "__main__":
     fire.Fire(CLI)
