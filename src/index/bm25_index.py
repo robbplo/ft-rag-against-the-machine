@@ -12,8 +12,8 @@ class BM25Index(Index):
     _documents: list[Document] | None = PrivateAttr(default=None)
     _stemmer: Stemmer.Stemmer = PrivateAttr(default_factory=lambda: Stemmer.Stemmer("english"))
 
-    def generate(self) -> None:
-        documents = self.dataset.getDocuments()
+    def generate(self, chunk_size: int) -> None:
+        documents = self.dataset.getDocuments(chunk_size)
         corpus = [doc.content for doc in documents]
         corpus_tokens = tokenize(corpus, stemmer=self._stemmer)
         retriever = BM25()

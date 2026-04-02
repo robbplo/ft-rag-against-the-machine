@@ -1,4 +1,4 @@
-from src.data.python_dataset import PythonDataset
+from src.data.dataset import Dataset
 from src.rag_models import (
     RagDataset, MinimalSource, MinimalSearchResults, StudentSearchResults
 )
@@ -11,17 +11,17 @@ import json
 import fire
 
 class CLI:
-    def index(self):
+    def index(self, chunk_size: int = 2000):
         strategy: IndexStrategy = IndexStrategy.BM25
-        dataset = PythonDataset(path=Path('data/raw/vllm-0.10.1/'));
+        dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'));
         index = BM25Index(
                 path=Path('data/index/bm25_index'),
                 dataset=dataset,
                 )
-        index.generate()
+        index.generate(chunk_size)
 
     def search(self, query: str, k: int = 5):
-        dataset = PythonDataset(path=Path('data/raw/vllm-0.10.1/'))
+        dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'))
         index = BM25Index(
                 path=Path('data/index/bm25_index'),
                 dataset=dataset,
@@ -39,7 +39,7 @@ class CLI:
         k: int = 5,
         save_directory: str = "data/output/search_results",
     ) -> None:
-        dataset = PythonDataset(path=Path('data/raw/vllm-0.10.1/'))
+        dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'))
         index = BM25Index(
             path=Path('data/index/bm25_index'),
             dataset=dataset,

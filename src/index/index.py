@@ -13,7 +13,7 @@ class Index(BaseModel):
     dataset: Dataset
 
     @abstractmethod
-    def generate(self) -> None:
+    def generate(self, chunk_size: int) -> None:
         pass
 
     @abstractmethod
