@@ -18,6 +18,7 @@ dependencies = [
     "unstructured>=0.21.5",
     "bm25s>=0.3.2.post1",
     "pystemmer>=3.0.0",
+    "langchain-text-splitters>=1.1.1",
 ]
 
 [tool.uv.sources]
