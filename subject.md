@@ -1,26 +1,27 @@
 # RAG against the machine
-## Will you answer my questions?
+### Will you answer my questions?
 
 > **Summary:** Retrieval Augmented Generation, that's it. That's the goal of this project.
 > Made in collaboration with @ldevelle, @pcamaren, @crfernan
-> **Version:** 1.3
+> **Version:** 1.6
 
 ---
 
 ## Table of Contents
 
-- [Chapter I — Foreword](#chapter-i--foreword)
-- [Chapter II — AI Instructions](#chapter-ii--ai-instructions)
-- [Chapter III — Common Instructions](#chapter-iii--common-instructions)
-- [Chapter IV — Common Instructions (Project-Specific)](#chapter-iv--common-instructions-project-specific)
-- [Chapter V — Mandatory Part](#chapter-v--mandatory-part)
-- [Chapter VI — Evaluation](#chapter-vi--evaluation)
-- [Chapter VII — Readme Requirements](#chapter-vii--readme-requirements)
-- [Chapter VIII — Submission and Peer-Evaluation](#chapter-viii--submission-and-peer-evaluation)
+- [Chapter I – Foreword](#chapter-i--foreword)
+- [Chapter II – AI Instructions](#chapter-ii--ai-instructions)
+- [Chapter III – Common Instructions](#chapter-iii--common-instructions)
+- [Chapter IV – Common Instructions (Project-Specific)](#chapter-iv--common-instructions-project-specific)
+- [Chapter V – Mandatory Part](#chapter-v--mandatory-part)
+- [Chapter VI – Evaluation](#chapter-vi--evaluation)
+- [Chapter VII – Readme Requirements](#chapter-vii--readme-requirements)
+- [Chapter VIII – Bonus Part](#chapter-viii--bonus-part)
+- [Chapter IX – Submission and Peer-Evaluation](#chapter-ix--submission-and-peer-evaluation)
 
 ---
 
-## Chapter I — Foreword
+## Chapter I – Foreword
 
 The **birthday paradox** is a classic problem in probability theory that demonstrates how counterintuitive probability can be. It shows that even when the probability of an event seems very low, it can occur more frequently than our intuition suggests when there are enough opportunities.
 
@@ -33,14 +34,14 @@ This is a veridical paradox — a statement that appears false but is actually t
 The answer: **50%!** Surprising, isn't it? Here's the formula:
 
 ```
-1 − (364/365)^(n(n−1)/2)
+P(n) = 1 - 365! / ((365 - n)! * 365^n)
 ```
 
-Where *n* represents the number of students. The probability reaches approximately 50% when *n* = 23.
+Where `n` represents the number of students. The probability reaches approximately 50% when `n = 23`.
 
-Even more remarkable: with 70 students in a classroom, the probability rises to approximately **99.9%** that at least two share the same birthday.
+Even more remarkable: with 70 students in a classroom, the probability rises to approximately 99.9% that at least two share the same birthday.
 
-*"Interesting trivia, but what does this have to do with the project?"* you might ask.
+"Interesting trivia, but what does this have to do with the project?" you might ask.
 
 In cryptography, there exists an attack that exploits the birthday paradox to find collisions in hash functions. It's aptly named: **the birthday attack**.
 
@@ -48,7 +49,7 @@ Now that you understand how our intuitions can mislead us and how mathematics ca
 
 ---
 
-## Chapter II — AI Instructions
+## Chapter II – AI Instructions
 
 ### Context
 
@@ -96,7 +97,7 @@ During your learning journey, AI can assist with many different tasks. Take the 
 
 ---
 
-## Chapter III — Common Instructions
+## Chapter III – Common Instructions
 
 ### III.1 General Rules
 
@@ -115,8 +116,16 @@ Include a `Makefile` in your project to automate common tasks. It must contain t
 - **run**: Execute the main script of your project (e.g., via Python interpreter).
 - **debug**: Run the main script in debug mode using Python's built-in debugger (e.g., `pdb`).
 - **clean**: Remove temporary files or caches (e.g., `__pycache__`, `.mypy_cache`) to keep the project environment clean.
-- **lint**: Execute the commands `flake8 .` and `mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs`
-- **lint-strict** *(optional)*: Execute the commands `flake8 .` and `mypy . --strict`
+- **lint**: Execute the commands:
+  ```
+  flake8 .
+  mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+  ```
+- **lint-strict** *(optional)*: Execute the commands:
+  ```
+  flake8 .
+  mypy . --strict
+  ```
 
 ### III.3 Additional Guidelines
 
@@ -128,17 +137,17 @@ Include a `Makefile` in your project to automate common tasks. It must contain t
 
 ### III.4 Overview
 
-A new project is often linked to new techniques and new skills: we've seen **function calling** in *call_me_maybe*, and we will continue our exploration into the world of AI in this project. The main topic we're going to approach is **RAG**. But before seeing what RAG is about in its substance, let's focus on what it does!
+A new project is often linked to new techniques and new skills: we've seen **function calling** in *call_me_maybe*, and we will continue our exploration into the world of AI in this project. The main topic we're going to approach is **RAG**. But before seeing what RAG is about in its substance, let's focus on what it does! To do so, let's take a step back.
 
 When creating an AI model, one of the first steps is to train it. You want the model to develop skills such as **language understanding, reasoning, and structural analysis**, and to achieve this, you feed it a huge amount of data. After training, the model "remembers" what it has learned, but it only "knows" the data it has been given. If you want it to have more recent knowledge, you must retrain it — a process that takes a long time.
 
 **Training** is a *technique*, and **RAG** is another one. Instead of feeding the model data directly, RAG gives the model access to an external source of information and that source is of *your choice*.
 
-The two techniques can be combined: the model must still be trained on the key concepts (language understanding, reasoning, and structural analysis) to build its foundation, but for knowledge, it can combine its trained data with the external connection.
+The two techniques can be combined: the model must still be trained on the key concepts we've mentioned before (language understanding, reasoning, and structural analysis) to build its foundation, but for knowledge, it can combine its trained data with the external connection.
 
 ### III.5 What is Retrieval Augmented Generation (RAG)?
 
-RAG breaks down into four key concepts:
+To understand RAG, we'll break it down into its key concepts:
 
 - **Indexing**: Before retrieval, the data must be indexed. This step structures and organises the information to make it searchable later on.
 
@@ -150,7 +159,7 @@ RAG breaks down into four key concepts:
 
 ---
 
-## Chapter IV — Common Instructions (Project-Specific)
+## Chapter IV – Common Instructions (Project-Specific)
 
 ### IV.1 General Rules
 
@@ -164,15 +173,15 @@ RAG breaks down into four key concepts:
 
 - You may use any libraries you want; highly recommended packages: `transformers`, `dspy`, `fire`, `tqdm`, `langchain`, `bm25s`, `chromadb`.
 - You need to use the following models:
-  - **`Qwen/Qwen3-0.6B`** (default)
-  - You can use other models as long as it is working with `Qwen/Qwen3-0.6B`
+  - **Qwen/Qwen3-0.6B** (default)
+  - You can use other models as long as it is working with **Qwen/Qwen3-0.6B**
 - You must use `uv` as a project and package manager.
 - Your system must provide a Command-Line Interface (CLI) using **Python Fire**.
 - Progress bars should be implemented for long-running operations using `tqdm`.
 
 ---
 
-## Chapter V — Mandatory Part
+## Chapter V – Mandatory Part
 
 ### V.1 Summary
 
@@ -180,7 +189,7 @@ In this project, you will build a **Retrieval-Augmented Generation (RAG) system*
 
 1. **Ingest** the vLLM repository (provided as attachment) and create a searchable knowledge base
 2. **Search** this knowledge base to find relevant code snippets and documentation for given questions
-3. **Answer** questions using an LLM (`Qwen/Qwen3-0.6B`) with the retrieved context
+3. **Answer** questions using an LLM (Qwen/Qwen3-0.6B) with the retrieved context
 4. **Evaluate** your retrieval system's quality using recall@k metrics
 
 Your system will be tested on its ability to correctly retrieve relevant source code locations when asked questions about the vLLM project, and to generate accurate answers based on the retrieved context.
@@ -194,7 +203,7 @@ You must create a Python application that includes:
 - Read and process all files from the vLLM repository provided in the attachments
 - Implement intelligent chunking for Python code and Markdown documentation
 - Create a searchable index using TF-IDF or BM25
-- Store the index for fast retrieval (maximum **5 minutes** indexing time)
+- Store the index for fast retrieval (maximum 5 minutes indexing time)
 
 #### V.2.2 Retrieval System
 
@@ -202,21 +211,27 @@ You must create a Python application that includes:
 - Return top-k most relevant code snippets for any query
 - Each result must include: `file_path`, `first_character_index`, `last_character_index`
 - Support batch processing of multiple questions from JSON datasets
-- Achieve at least **55% recall@5** on docs questions and **45%** on code questions
+- Achieve at least **80% recall@5** on docs questions and **50%** on code questions
 
 #### V.2.3 Answer Generation System
 
-- Use `Qwen/Qwen3-0.6B` model to generate natural language answers
+- Use Qwen/Qwen3-0.6B model to generate natural language answers
 - Pass retrieved context to the LLM within token limits
 - Generate answers based on the retrieved code and documentation
 - Output structured JSON following the provided pydantic models
-- Answer questions in **maximum 2 seconds** per question
+
+A good answer must be:
+
+- **Self-contained**: readable without seeing the original question
+- **Source-grounded**: cites the source(s) it draws from
+- **Faithful**: limits itself to source content (no hallucination)
+- **Relevant**: directly answers the question asked
 
 #### V.2.4 Evaluation System
 
 - Implement recall@k metric to measure retrieval quality
 - Compare retrieved sources against ground truth annotations
-- Calculate overlap between retrieved and correct sources (minimum **5% overlap** counts as found)
+- Calculate overlap between retrieved and correct sources (minimum 5% overlap counts as found)
 - Provide detailed performance metrics
 
 #### V.2.5 Command-Line Interface
@@ -230,10 +245,12 @@ Provide a CLI using Python Fire with these commands:
 - `answer_dataset`: Generate answers from search results
 - `evaluate`: Evaluate search results against ground truth
 
+Additional requirements:
 - Include progress bars for long-running operations
 - Handle errors gracefully with clear messages
+- Your system's CLI arguments will be tested thoroughly with edge cases — ensure your program handles degenerate inputs without crashing
 
-> 💡 **Start simple!** Begin with basic TF-IDF or BM25 retrieval and measure your recall@k score. Once you have a working baseline with good metrics, you can experiment with more sophisticated approaches.
+> **ℹ️ Tip:** Start simple! Begin with basic TF-IDF or BM25 retrieval and measure your recall@k score. Once you have a working baseline with good metrics, you can experiment with more sophisticated approaches.
 
 ### V.3 Core Functionalities
 
@@ -247,7 +264,7 @@ The minimum functionalities to implement are:
 - Provide a comprehensive CLI interface for all operations.
 - Include evaluation metrics and performance analysis.
 
-> 💡 **Don't panic!** Start by measuring your error using the simplest approach. Advance to complex methods once your error measurement is improving.
+> **ℹ️ Tip:** Don't panic! Start by measuring your error using the simplest approach. Advance to complex methods once your error measurement is improving.
 
 ### V.4 Chunking Strategy
 
@@ -256,11 +273,11 @@ Your program must implement different chunking strategies for the different type
 - Python code chunking
 - Text chunking
 
-> ⚠️ The **maximum chunk size is 2000 characters** and it has to be configurable through a CLI argument.
+> **⚠️ Constraint:** The maximum chunk size is **2000 characters** and it has to be configurable through a CLI argument.
 
 ### V.5 Retrieving Method
 
-One of the two following retrieving methods must be implemented (the choice is up to you):
+One of the two following retrieving methods must be implemented (your choice):
 
 - **TF-IDF**
 - **BM25**
@@ -276,7 +293,7 @@ This section describes the complete workflow of the moulinette, from raw documen
 ```
 ls -l data/raw
 total 11988
-drwxrwxr-x 15 student student  4096 Aug 19 00:27 vllm-0.10.1
+drwxrwxr-x 15 student student    4096 Aug 19 00:27 vllm-0.10.1
 -rw-r--r--  1 student student 12267696 Nov  2 22:21 vllm-0.10.1.zip
 ```
 
@@ -284,7 +301,7 @@ drwxrwxr-x 15 student student  4096 Aug 19 00:27 vllm-0.10.1
 
 ```bash
 uv run python -m student index --max_chunk_size 2000
-Ingestion complete! Indices saved under data/processed/
+# Ingestion complete! Indices saved under data/processed/
 
 ls -l data/processed
 total 8
@@ -294,13 +311,11 @@ drwxrwxr-x 3 student student 4096 Dec  9 10:09 chunks
 
 #### V.6.3 Answer: Answer Single Query with Context
 
-This command allows answering a single query using the indexed documents.
-
 ```bash
 uv run python -m student answer "How to configure OpenAI server?" --k 10
 ```
 
-*Optional parameters: `k` — Number of results to retrieve.*
+*Optional parameters:* `k` — Number of results to retrieve.
 
 #### V.6.4 Showing Datasets
 
@@ -329,7 +344,7 @@ uv run python -m student search_dataset \
   --dataset_path data/datasets/UnansweredQuestions/dataset_docs_public.json \
   --k 10 \
   --save_directory data/output/search_results
-Saved student_search_results to data/output/search_results/dataset_docs_public.json
+# Saved student_search_results to data/output/search_results/dataset_docs_public.json
 
 ls -l data/output/search_results
 total 4672
@@ -344,6 +359,10 @@ uv run python -m moulinette evaluate_student_search_results \
   --dataset_path data/datasets/AnsweredQuestions/dataset_docs_public.json \
   --k 10 \
   --max_context_length 2000
+```
+
+Example output:
+```
 Student data is valid: True
 Total number of questions: 100
 Total number of questions with sources: 100
@@ -364,9 +383,9 @@ Recall@10: 0.720
 uv run python -m student answer_dataset \
   --student_search_results_path data/output/search_results/dataset_docs_public.json \
   --save_directory data/output/search_results_and_answer
-Loaded 100 questions from data/output/search_results/dataset_docs_public.json
-Processed 100 of 100 questions
-Saved student_search_results_and_answer to data/output/search_results_and_answer/dataset_docs_public.json
+# Loaded 100 questions from data/output/search_results/dataset_docs_public.json
+# Processed 100 of 100 questions
+# Saved student_search_results_and_answer to data/output/search_results_and_answer/dataset_docs_public.json
 
 ls -l data/output/search_results_and_answer
 total 4688
@@ -386,10 +405,11 @@ jq -s --argjson i "$i" '
       predicted: $results.search_results[$i].answer
     }
 ' \
-data/datasets/AnsweredQuestions/dataset_docs_public.json \
-data/output/search_results_and_answer/dataset_docs_public.json
+  data/datasets/AnsweredQuestions/dataset_docs_public.json \
+  data/output/search_results_and_answer/dataset_docs_public.json
 ```
 
+Example output:
 ```json
 {
   "index": 42,
@@ -403,7 +423,8 @@ data/output/search_results_and_answer/dataset_docs_public.json
 
 The following pydantic models for type-safe data handling must be implemented. These models ensure data integrity and provide automatic validation throughout the pipeline.
 
-**MinimalSource Model**
+**MinimalSource** — represents a minimal source of information:
+
 ```python
 class MinimalSource(BaseModel):
     file_path: str
@@ -411,7 +432,8 @@ class MinimalSource(BaseModel):
     last_character_index: int
 ```
 
-**UnansweredQuestion and AnsweredQuestion Models**
+**UnansweredQuestion** and **AnsweredQuestion** — represent questions with and without answers:
+
 ```python
 class UnansweredQuestion(BaseModel):
     question_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -422,13 +444,15 @@ class AnsweredQuestion(UnansweredQuestion):
     answer: str
 ```
 
-**RagDataset Model**
+**RagDataset** — represents a dataset of RAG questions:
+
 ```python
 class RagDataset(BaseModel):
     rag_questions: List[AnsweredQuestion | UnansweredQuestion]
 ```
 
-**MinimalSearchResults and MinimalAnswer Models**
+**MinimalSearchResults** and **MinimalAnswer** — represent search results and an answer:
+
 ```python
 class MinimalSearchResults(BaseModel):
     question_id: str
@@ -439,7 +463,8 @@ class MinimalAnswer(MinimalSearchResults):
     answer: str
 ```
 
-**StudentSearchResults and StudentSearchResultsAndAnswer Models**
+**StudentSearchResults** and **StudentSearchResultsAndAnswer** — represent search results and search results with answers:
+
 ```python
 class StudentSearchResults(BaseModel):
     search_results: List[MinimalSearchResults]
@@ -454,15 +479,16 @@ class StudentSearchResultsAndAnswer(StudentSearchResults):
 ### V.8 Input
 
 **Ingestion Options:**
+
 - **Repository**: Index all the files you judge useful in the repository
 
 For each query, your system must retrieve relevant chunks of the repository and generate an evidence-based response in the same form as the output.
 
-> 💡 Linked to the different chunking strategies, you can create different indexes for the different types of files.
+> **ℹ️ Tip:** Linked to the different chunking strategies, you can create different indexes for the different types of files.
 
 ### V.9 Output
 
-The output must conform to the provided Pydantic models and must be a comprehensive JSON file containing detailed results and metadata:
+The output must conform to the provided Pydantic models and must be a comprehensive JSON file containing detailed results and metadata as follows:
 
 - **For search operations**: Use `StudentSearchResults` model with:
   - `search_results`: List of `MinimalSearchResults` containing `question_id` and `retrieved_sources`
@@ -478,53 +504,59 @@ The output must conform to the provided Pydantic models and must be a comprehens
   - `last_character_index`: Ending character position
 
 **Example: StudentSearchResults Output**
+
 ```json
-"search_results": [
-  {
-    "question_id": "q1",
-    "retrieved_sources": [
-      {
-        "file_path": "docs/serving/openai_compatible_server.md",
-        "first_character_index": 9867,
-        "last_character_index": 10100
-      },
-      {
-        "file_path": "vllm/entrypoints/openai/api_server.py",
-        "first_character_index": 267,
-        "last_character_index": 400
-      }
-    ]
-  }
-],
-"k": 10
+{
+  "search_results": [
+    {
+      "question_id": "q1",
+      "retrieved_sources": [
+        {
+          "file_path": "docs/serving/openai_compatible_server.md",
+          "first_character_index": 9867,
+          "last_character_index": 10100
+        },
+        {
+          "file_path": "vllm/entrypoints/openai/api_server.py",
+          "first_character_index": 267,
+          "last_character_index": 400
+        }
+      ]
+    }
+  ],
+  "k": 10
+}
 ```
 
 **Example: StudentSearchResultsAndAnswer Output**
+
 ```json
-"search_results": [
-  {
-    "question_id": "q1",
-    "retrieved_sources": [
-      {
-        "file_path": "docs/serving/openai_compatible_server.md",
-        "first_character_index": 9867,
-        "last_character_index": 10100
-      },
-      {
-        "file_path": "vllm/entrypoints/openai/api_server.py",
-        "first_character_index": 267,
-        "last_character_index": 400
-      }
-    ],
-    "answer": "To configure the OpenAI compatible server in vLLM..."
-  }
-],
-"k": 10
+{
+  "search_results": [
+    {
+      "question_id": "q1",
+      "retrieved_sources": [
+        {
+          "file_path": "docs/serving/openai_compatible_server.md",
+          "first_character_index": 9867,
+          "last_character_index": 10100
+        },
+        {
+          "file_path": "vllm/entrypoints/openai/api_server.py",
+          "first_character_index": 267,
+          "last_character_index": 400
+        }
+      ],
+      "answer": "To configure the OpenAI compatible server in vLLM..."
+    }
+  ],
+  "k": 10
+}
 ```
 
 ---
 
-## Chapter VI — Evaluation
+## Chapter VI – Evaluation
 
 ### VI.1 Evaluation Metrics
 
@@ -532,34 +564,37 @@ The evaluation of the program is performed using a **recall@k** metric that meas
 
 #### VI.1.1 Recall@k Calculation
 
-The recall@k for a given question is calculated by checking how much the retrieved sources overlap with the correct sources. A source is considered "found" if there is at least **5% overlap** between the retrieved source and any correct source. If there are multiple sources in the question, their retrieval score for that question is `number_found / number_of_sources`.
+The recall@k for a given question is calculated by checking how much the retrieved sources overlap with the correct sources. A source is considered "found" if there is at least **5% overlap** between the retrieved source and any correct source. If there are multiple sources in the question, their retrieval score for that question is:
+
+```
+score = number_found / total_number_of_correct_sources
+```
 
 #### VI.1.2 Performances
 
-Your system must respect the following minimal performance requirements:
+Your system must respect the following minimal performance thresholds:
 
 | Metric | Requirement |
-|--------|-------------|
+|---|---|
 | Indexing time | 5 minutes maximum |
-| Cold start latency | 60 seconds maximum (first retrieval after system startup, including model loading) |
+| Cold start latency | 60 seconds maximum (first retrieval after startup, including model loading) |
 | Warm retrieval throughput | 90 seconds maximum for 1000 questions (after cold start) |
-| Recall@5 (docs) | 55% minimum |
-| Recall@5 (code) | 45% minimum |
+| Recall@5 | 80% on docs questions, 50% on code questions |
+
+Exceeding the minimum thresholds is rewarded — higher recall scores earn additional credit during evaluation.
 
 ---
 
-## Chapter VII — Readme Requirements
+## Chapter VII – Readme Requirements
 
 A `README.md` file must be provided at the root of your Git repository. Its purpose is to allow anyone unfamiliar with the project (peers, staff, recruiters, etc.) to quickly understand what the project is about, how to run it, and where to find more information on the topic.
 
-### Mandatory README Sections
+The `README.md` must include at least:
 
-- The **very first line** must be italicized and read: *This project has been created as part of the 42 curriculum by \<login1\>[, \<login2\>[, \<login3\>[...]]].*
+- The very first line must be italicized and read: *This project has been created as part of the 42 curriculum by \<login1\>[, \<login2\>[, \<login3\>[...]]].*
 - A **"Description"** section that clearly presents the project, including its goal and a brief overview.
 - An **"Instructions"** section containing any relevant information about compilation, installation, and/or execution.
 - A **"Resources"** section listing classic references related to the topic (documentation, articles, tutorials, etc.), as well as a description of how AI was used — specifying for which tasks and which parts of the project.
-
-### Project-Specific README Additions
 
 For this project, the `README.md` must also include:
 
@@ -571,15 +606,27 @@ For this project, the `README.md` must also include:
 - **Challenges faced**: Document difficulties encountered and solutions
 - **Example usage**: Provide clear examples of running your system
 
-> ⚠️ Your README must be written in **English**.
+> **ℹ️ Note:** Your README must be written in English.
 
 ---
 
-## Chapter VIII — Submission and Peer-Evaluation
+## Chapter VIII – Bonus Part
+
+You may implement advanced RAG features for bonus credit. Areas include but are not limited to:
+
+- Query expansion (e.g., synonym expansion, query rewriting)
+- Semantic embeddings for retrieval
+- Result caching (index caching, query caching, etc.)
+- Hybrid retrieval combining multiple methods
+- Local LLM inference via vLLM
+
+> **⚠️ Important:** Bonus features must be implemented and working — not just described in the `README.md`. You may be asked to demonstrate them during evaluation.
+
+---
+
+## Chapter IX – Submission and Peer-Evaluation
 
 Submit your assignment in your Git repository as usual. Only the work inside your repository will be evaluated during the defense. Don't hesitate to double-check the names of your files to ensure they are correct.
-
-### Repository Structure
 
 Your repository must contain:
 
@@ -588,9 +635,9 @@ Your repository must contain:
 - `README.md` with comprehensive documentation
 - Any additional configuration files needed to run your solution
 
-> ⛔ **Do not include large data files, model weights, or generated outputs in your repository.** The evaluator will generate these during the evaluation process.
+> **⚠️ Warning:** Do not include large data files, model weights, or generated outputs in your repository. The evaluator will generate these during the evaluation process.
 
-### VIII.1 Recode Instructions
+### IX.1 Recode Instructions
 
 During the evaluation, a brief **modification of the project** may occasionally be requested. This could involve a minor behaviour change, a few lines of code to write or rewrite, or an easy-to-add feature.
 
@@ -600,4 +647,4 @@ This step is meant to verify your actual understanding of a specific part of the
 
 You can, for example, be asked to make a small update to a function or script, modify a display, or adjust a data structure to store new information, etc.
 
-The details (scope, target, etc.) will be specified in the **evaluation guidelines** and may vary from one evaluation to another for the same project.
+The details (scope, target, etc.) will be specified in the evaluation guidelines and may vary from one evaluation to another for the same project.
