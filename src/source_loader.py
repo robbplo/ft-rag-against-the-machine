@@ -1,5 +1,4 @@
 from src.models import MinimalSource
-from src.data.document import Document
 from pydantic import BaseModel, Field
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
@@ -7,7 +6,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 PATH = Path('data/raw/vllm-0.10.1/')
 
 class SourceLoader():
-    def getDocuments(self, chunk_size: int) -> list[MinimalSource]:
+    def getSources(self, chunk_size: int) -> list[MinimalSource]:
         return self.getCode(chunk_size) + self.getDocs(chunk_size)
 
     def getCode(self, chunk_size: int) -> list[MinimalSource]:

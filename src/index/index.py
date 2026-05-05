@@ -1,19 +1,15 @@
+from src.models import MinimalSource
 from enum import auto, StrEnum
-from src.data.document import Document
 from abc import abstractmethod
 from src.source_loader import SourceLoader
 from pathlib import Path
 from pydantic import BaseModel
 
-class IndexStrategy(StrEnum):
-    BM25 = auto()
-
-class Index(BaseModel):
+class IndexStrategy(BaseModel):
     path: Path
-    dataset: Dataset
 
     @abstractmethod
-    def generate(self, chunk_size: int) -> None:
+    def generate(self, chunk_size: int, sources: list[MinimalSource]) -> None:
         pass
 
     @abstractmethod
@@ -21,5 +17,5 @@ class Index(BaseModel):
         pass
 
     @abstractmethod
-    def search(self, query: str, k: int) -> list[Document]:
+    def search(self, query: str, k: int) -> list[MinimalSource]:
         pass

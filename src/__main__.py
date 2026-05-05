@@ -1,11 +1,11 @@
-from src.data.dataset import Dataset
+from src.index.bm25_index import BM25IndexStrategy
+from src.source_loader import SourceLoader
 from src.models import (
     RagDataset, MinimalSource, MinimalSearchResults, StudentSearchResults,
     MinimalAnswer, StudentSearchResultsAndAnswer,
 )
 from src.evaluator import evaluate as run_evaluate
 from src.answer_generator import AnswerGenerator
-from src.index.bm25_index import BM25Index
 from src.index.bm25_retriever import BM25RetrieverAdapter
 from src.index.index import IndexStrategy
 from pathlib import Path
@@ -15,25 +15,17 @@ import fire
 
 class CLI:
     def index(self, chunk_size: int = 2000):
-        strategy: IndexStrategy = IndexStrategy.BM25
-        dataset = Dataset();
-        index = BM25Index(
-                path=Path('data/index/bm25_index'),
-                dataset=dataset,
-                )
-        index.generate(chunk_size)
+        source_loader = SourceLoader()
+        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
+        index.generate(chunk_size, source_loader.getSources(chunk_size))
 
     def search(self, query: str, k: int = 5):
-        dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'))
-        index = BM25Index(
-                path=Path('data/index/bm25_index'),
-                dataset=dataset,
-                )
+        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
         index.load()
         results = index.search(query, k=k)
-        for doc in results:
-            print(f"--- {doc.path} [{doc.start_index}:{doc.end_index}] ---")
-            print(doc.content[:100])
+        for src in results:
+            print(f"--- {src.file_path} [{src.first_character_index}:{src.last_character_index}] ---")
+            print(src.content[:100])
             print()
 
     def search_dataset(
@@ -42,11 +34,7 @@ class CLI:
         k: int = 5,
         save_directory: str = "data/output/search_results",
     ) -> None:
-        dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'))
-        index = BM25Index(
-            path=Path('data/index/bm25_index'),
-            dataset=dataset,
-        )
+        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
         index.load()
 
         raw = json.loads(Path(dataset_path).read_text())
@@ -55,19 +43,11 @@ class CLI:
         search_results = []
         for q in rag_dataset.rag_questions:
             docs = index.search(q.question, k=k)
-            sources = [
-                MinimalSource(
-                    file_path=str(doc.path),
-                    first_character_index=doc.start_index,
-                    last_character_index=doc.end_index,
-                )
-                for doc in docs
-            ]
             search_results.append(
                 MinimalSearchResults(
                     question_id=q.question_id,
                     question=q.question,
-                    retrieved_sources=sources,
+                    retrieved_sources=docs,
                 )
             )
 
