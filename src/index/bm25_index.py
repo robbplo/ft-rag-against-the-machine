@@ -1,7 +1,6 @@
 from bm25s.tokenization import tokenize
 from bm25s import BM25
 from src.data.document import Document
-from src.data.dataset import Dataset
 from src.index.index import Index
 from pydantic import PrivateAttr
 import Stemmer  # ty:ignore[unresolved-import]

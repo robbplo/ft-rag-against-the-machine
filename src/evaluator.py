@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.rag_models import (
+from src.models import (
     AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults
 )
 import json

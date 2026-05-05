@@ -63,8 +63,8 @@ class AnswerGenerator:
         generation_config.do_sample = False
 
 
-    def stream(self, question):
-        documents = self.retriever.invoke(question)
+    def stream(self, question: str):
+        """Stream an answer using the retriever to fetch context."""
         prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         chain = (
             {"documents": self.retriever | format_docs, "question": RunnablePassthrough()}
@@ -72,6 +72,16 @@ class AnswerGenerator:
             | HuggingFacePipeline(pipeline=self.pipe)
             | StrOutputParser()
         )
-
         return chain.stream(question)
+
+    def answer(self, question: str, context_docs: list[str]) -> str:
+        """Generate an answer given pre-retrieved document content strings."""
+        formatted = "\n\n".join(context_docs)
+        prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
+        chain = (
+            prompt
+            | HuggingFacePipeline(pipeline=self.pipe)
+            | StrOutputParser()
+        )
+        return cast(str, chain.invoke({"documents": formatted, "question": question}))
 

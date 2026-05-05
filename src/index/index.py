@@ -1,7 +1,7 @@
 from enum import auto, StrEnum
 from src.data.document import Document
 from abc import abstractmethod
-from src.data.dataset import Dataset
+from src.source_loader import SourceLoader
 from pathlib import Path
 from pydantic import BaseModel
 
