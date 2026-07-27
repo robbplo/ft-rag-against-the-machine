@@ -1,16 +1,17 @@
 from src.models import MinimalSource
-from pydantic import BaseModel, Field
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter, Language
 
-PATH = Path('data/raw/vllm-0.10.1/')
 
-class SourceLoader():
+class SourceLoader:
+    def __init__(self, path: Path = Path("data/raw/vllm-0.10.1")):
+        self.path = path
+
     def getSources(self, chunk_size: int) -> list[MinimalSource]:
         return self.getCode(chunk_size) + self.getDocs(chunk_size)
 
     def getCode(self, chunk_size: int) -> list[MinimalSource]:
-        glob = Path.glob(PATH, "**/[!.]*.py")
+        glob = Path.glob(self.path, "**/[!.]*.py")
         splitter = RecursiveCharacterTextSplitter.from_language(
                 Language.PYTHON,
                 chunk_size=chunk_size,
@@ -31,7 +32,7 @@ class SourceLoader():
         return sources
 
     def getDocs(self, chunk_size: int) -> list[MinimalSource]:
-        glob = Path.glob(PATH, "**/[!.]*.md")
+        glob = Path.glob(self.path, "**/[!.]*.md")
         splitter = RecursiveCharacterTextSplitter.from_language(
                 Language.MARKDOWN,
                 chunk_size=chunk_size,

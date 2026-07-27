@@ -1,154 +1,121 @@
-from src.index.bm25_index import BM25IndexStrategy
-from src.source_loader import SourceLoader
-from src.models import (
-    RagDataset, MinimalSource, MinimalSearchResults, StudentSearchResults,
-    MinimalAnswer, StudentSearchResultsAndAnswer,
-)
-from src.evaluator import evaluate as run_evaluate
-from src.answer_generator import AnswerGenerator
-from src.index.bm25_retriever import BM25RetrieverAdapter
-from src.index.index import IndexStrategy
-from pathlib import Path
-from tqdm import tqdm
+"""Command-line entrypoint for the RAG pipeline."""
+
 import json
+from pathlib import Path
+
 import fire
 
-class CLI:
-    def index(self, chunk_size: int = 2000):
-        source_loader = SourceLoader()
-        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
-        index.generate(chunk_size, source_loader.getSources(chunk_size))
+from src.evaluator import evaluate as run_evaluate
+from src.index.bm25_index import BM25IndexStrategy
+from src.models import (
+    MinimalSearchResults,
+    RagDataset,
+    StudentSearchResults,
+)
+from src.output import dataset_output_path, write_json_output
+from src.source_loader import SourceLoader
 
-    def search(self, query: str, k: int = 5):
-        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
+
+DEFAULT_CORPUS_PATH = Path("data/raw/vllm-0.10.1")
+DEFAULT_INDEX_PATH = Path("data/processed/bm25_index")
+
+
+class CLI:
+    """Commands exposed through ``uv run python -m src``."""
+
+    def index(
+        self,
+        max_chunk_size: int = 2000,
+        corpus_path: str = str(DEFAULT_CORPUS_PATH),
+        index_path: str = str(DEFAULT_INDEX_PATH),
+    ) -> None:
+        """Chunk and index the configured source corpus."""
+        if max_chunk_size <= 0 or max_chunk_size > 2000:
+            raise ValueError("max_chunk_size must be between 1 and 2000")
+        source_loader = SourceLoader(Path(corpus_path))
+        index = BM25IndexStrategy(path=Path(index_path))
+        index.generate(
+            max_chunk_size,
+            source_loader.getSources(max_chunk_size),
+        )
+
+    def search(
+        self,
+        query: str,
+        k: int = 10,
+        index_path: str = str(DEFAULT_INDEX_PATH),
+    ) -> None:
+        """Print the top-k sources for one query."""
+        if not query.strip():
+            raise ValueError("query must not be empty")
+        if k <= 0:
+            raise ValueError("k must be greater than zero")
+        index = BM25IndexStrategy(path=Path(index_path))
         index.load()
         results = index.search(query, k=k)
-        for src in results:
-            print(f"--- {src.file_path} [{src.first_character_index}:{src.last_character_index}] ---")
-            print(src.content[:100])
+        for source in results:
+            print(
+                f"--- {source.file_path} "
+                f"[{source.first_character_index}:"
+                f"{source.last_character_index}] ---"
+            )
+            print(source.content[:100])
             print()
 
     def search_dataset(
         self,
-        dataset_path: str = "data/datasets/UnansweredQuestions/dataset_code_public.json",
-        k: int = 5,
+        dataset_path: str,
+        k: int = 10,
         save_directory: str = "data/output/search_results",
-    ) -> None:
-        index = BM25IndexStrategy(path=Path('data/index/bm25_index'))
+        index_path: str = str(DEFAULT_INDEX_PATH),
+    ) -> str:
+        """Search a dataset and write evaluator-compatible JSON."""
+        if k <= 0:
+            raise ValueError("k must be greater than zero")
+        input_path = Path(dataset_path)
+        index = BM25IndexStrategy(path=Path(index_path))
         index.load()
 
-        raw = json.loads(Path(dataset_path).read_text())
-        rag_dataset = RagDataset.model_validate(raw)
-
+        rag_dataset = RagDataset.model_validate(
+            json.loads(input_path.read_text())
+        )
         search_results = []
-        for q in rag_dataset.rag_questions:
-            docs = index.search(q.question, k=k)
+        for question in rag_dataset.rag_questions:
+            sources = index.search(question.question, k=k)
             search_results.append(
                 MinimalSearchResults(
-                    question_id=q.question_id,
-                    question=q.question,
-                    retrieved_sources=docs,
+                    question_id=question.question_id,
+                    question=question.question,
+                    retrieved_sources=sources,
                 )
             )
 
-        output = StudentSearchResults(search_results=search_results, k=k)
-
-        save_path = Path(save_directory)
-        save_path.mkdir(parents=True, exist_ok=True)
-        out_file = save_path / Path(dataset_path).name
-        out_file.write_text(output.model_dump_json(indent=2))
-        print(f"Saved student_search_results to {out_file}")
+        output = StudentSearchResults(
+            search_results=search_results,
+            k=k,
+        )
+        output_path = dataset_output_path(
+            input_path,
+            Path(save_directory),
+        )
+        write_json_output(output, output_path)
+        print(f"Saved student_search_results to {output_path}")
+        return str(output_path)
 
     def evaluate(
         self,
-        student_answer_path: str,
+        student_search_results_path: str,
         dataset_path: str,
         k: int = 10,
     ) -> None:
-        """Evaluate search results against ground truth using recall@k metric."""
-        run_evaluate(student_answer_path, dataset_path, k)
+        """Evaluate search results against a ground-truth dataset."""
+        run_evaluate(student_search_results_path, dataset_path, k)
 
-    # def answer(
-    #     self,
-    #     query: str,
-    #     k: int = 10,
-    #     model_id: str = "Qwen/Qwen3-0.6B",
-    # ) -> None:
-    #     """Answer a single question using RAG with the BM25 index."""
-    #     dataset = Dataset(path=Path('data/raw/vllm-0.10.1/'))
-    #     index = BM25Index(
-    #         path=Path('data/index/bm25_index'),
-    #         dataset=dataset,
-    #     )
-    #     index.load()
-    #
-    #     retriever = BM25RetrieverAdapter(index=index, k=k)
-    #     generator = AnswerGenerator(model_id=model_id, retriever=retriever)
-    #
-    #     print(f"Question: {query}\n")
-    #     print("Answer: ", end="", flush=True)
-    #     for chunk in generator.stream(query):
-    #         print(chunk, end="", flush=True)
-    #     print()
 
-    # def answer_dataset(
-    #     self,
-    #     student_search_results_path: str,
-    #     save_directory: str = "data/output/search_results_and_answer",
-    #     model_id: str = "Qwen/Qwen3-0.6B",
-    # ) -> None:
-    #     """Generate answers for all questions in a search results file."""
-    #     raw = json.loads(Path(student_search_results_path).read_text())
-    #     student_results = StudentSearchResults.model_validate(raw)
-    #
-    #     retriever = BM25RetrieverAdapter(
-    #         index=BM25Index(
-    #             path=Path('data/index/bm25_index'),
-    #             dataset=Dataset(path=Path('data/raw/vllm-0.10.1/')),
-    #         ),
-    #         k=student_results.k,
-    #     )
-    #     generator = AnswerGenerator(model_id=model_id, retriever=retriever)
-    #
-    #     answers: list[MinimalAnswer] = []
-    #     total = len(student_results.search_results)
-    #     print(f"Loaded {total} questions from {student_search_results_path}")
-    #
-    #     for i, result in enumerate(
-    #         tqdm(student_results.search_results, desc="Answering questions")
-    #     ):
-    #         context_docs = []
-    #         for src in result.retrieved_sources:
-    #             try:
-    #                 content = Path(src.file_path).read_text(errors="replace")
-    #                 context_docs.append(
-    #                     content[src.first_character_index:src.last_character_index]
-    #                 )
-    #             except OSError:
-    #                 pass
-    #
-    #         answer_text = generator.answer(result.question, context_docs)
-    #
-    #         answers.append(
-    #             MinimalAnswer(
-    #                 question_id=result.question_id,
-    #                 question=result.question,
-    #                 retrieved_sources=result.retrieved_sources,
-    #                 answer=answer_text,
-    #             )
-    #         )
-    #         print(f"Processed {i + 1} of {total} questions")
-    #
-    #     output = StudentSearchResultsAndAnswer(
-    #         search_results=answers,
-    #         k=student_results.k,
-    #     )
-    #
-    #     save_path = Path(save_directory)
-    #     save_path.mkdir(parents=True, exist_ok=True)
-    #     out_file = save_path / Path(student_search_results_path).name
-    #     out_file.write_text(output.model_dump_json(indent=2))
-    #     print(f"Saved student_search_results_and_answer to {out_file}")
+def main() -> None:
+    """Run the Python Fire command-line interface."""
+    fire.Fire(CLI)
+
 
 if __name__ == "__main__":
-    fire.Fire(CLI)
+    main()
