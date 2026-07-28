@@ -1,14 +1,6 @@
 install:
 	uv sync
 
-code:
-	uv run -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_code_public.json
-	uv run -m src evaluate --dataset_path data/datasets/AnsweredQuestions/dataset_code_public.json --student_answer_path data/output/search_results/dataset_code_public.json
-
-docs:
-	uv run -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_docs_public.json
-	uv run -m src evaluate --dataset_path data/datasets/AnsweredQuestions/dataset_docs_public.json --student_answer_path data/output/search_results/dataset_docs_public.json
-
 run:
 	uv run python -m src
 
@@ -23,4 +15,12 @@ lint:
 	uv run flake8 . --exclude .venv
 	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
-.PHONY: install run debug clean lint
+run-code:
+	uv run -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_code_public.json
+	uv run -m src evaluate --dataset_path data/datasets/AnsweredQuestions/dataset_code_public.json --student_search_results_path data/output/search_results/UnansweredQuestions/dataset_code_public.json
+
+run-docs:
+	uv run python -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_docs_public.json --k 10 --save_directory data/output/search_results/UnansweredQuestions
+	uv run python -m src evaluate --student_search_results_path data/output/search_results/UnansweredQuestions/dataset_docs_public.json --dataset_path data/datasets/AnsweredQuestions/dataset_docs_public.json --k 10
+
+.PHONY: install run debug clean lint run-code run-docs

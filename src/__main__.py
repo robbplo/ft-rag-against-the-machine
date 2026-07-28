@@ -18,6 +18,18 @@ from src.source_loader import SourceLoader
 
 DEFAULT_CORPUS_PATH = Path("data/raw/vllm-0.10.1")
 DEFAULT_INDEX_PATH = Path("data/processed/bm25_index")
+DEFAULT_UNANSWERED_DATASET_PATH = Path(
+    "data/datasets/UnansweredQuestions/dataset_docs_public.json"
+)
+DEFAULT_ANSWERED_DATASET_PATH = Path(
+    "data/datasets/AnsweredQuestions/dataset_docs_public.json"
+)
+DEFAULT_SEARCH_RESULTS_DIRECTORY = Path("data/output/search_results")
+DEFAULT_STUDENT_SEARCH_RESULTS_PATH = (
+    DEFAULT_SEARCH_RESULTS_DIRECTORY
+    / "UnansweredQuestions"
+    / DEFAULT_UNANSWERED_DATASET_PATH.name
+)
 
 
 class CLI:
@@ -64,9 +76,9 @@ class CLI:
 
     def search_dataset(
         self,
-        dataset_path: str,
+        dataset_path: str = str(DEFAULT_UNANSWERED_DATASET_PATH),
         k: int = 10,
-        save_directory: str = "data/output/search_results",
+        save_directory: str = str(DEFAULT_SEARCH_RESULTS_DIRECTORY),
         index_path: str = str(DEFAULT_INDEX_PATH),
     ) -> str:
         """Search a dataset and write evaluator-compatible JSON."""
@@ -104,8 +116,10 @@ class CLI:
 
     def evaluate(
         self,
-        student_search_results_path: str,
-        dataset_path: str,
+        student_search_results_path: str = str(
+            DEFAULT_STUDENT_SEARCH_RESULTS_PATH
+        ),
+        dataset_path: str = str(DEFAULT_ANSWERED_DATASET_PATH),
         k: int = 10,
     ) -> None:
         """Evaluate search results against a ground-truth dataset."""
