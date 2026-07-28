@@ -1,7 +1,6 @@
 from src.models import MinimalSource
 from enum import auto, StrEnum
 from abc import abstractmethod
-from src.source_loader import SourceLoader
 from pathlib import Path
 from pydantic import BaseModel
 

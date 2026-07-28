@@ -1,4 +1,7 @@
 """Command-line entrypoint for the RAG pipeline."""
+from src.index.weighted_strategy import WeightedStrategy
+from src.index.hybrid_index_strategy import HybridIndexStrategy
+from src.index.index_strategy import IndexStrategy
 
 import json
 from pathlib import Path
@@ -6,7 +9,7 @@ from pathlib import Path
 import fire
 
 from src.evaluator import evaluate as run_evaluate
-from src.index.bm25_index import BM25IndexStrategy
+from src.index.bm25_index_strategy import BM25IndexStrategy
 from src.models import (
     MinimalSearchResults,
     RagDataset,
@@ -45,7 +48,7 @@ class CLI:
         if max_chunk_size <= 0 or max_chunk_size > 2000:
             raise ValueError("max_chunk_size must be between 1 and 2000")
         source_loader = SourceLoader(Path(corpus_path))
-        index = BM25IndexStrategy(path=Path(index_path))
+        index = self._create_index(path=Path(index_path))
         index.generate(
             max_chunk_size,
             source_loader.getSources(max_chunk_size),
@@ -62,7 +65,7 @@ class CLI:
             raise ValueError("query must not be empty")
         if k <= 0:
             raise ValueError("k must be greater than zero")
-        index = BM25IndexStrategy(path=Path(index_path))
+        index = self._create_index(path=Path(index_path))
         index.load()
         results = index.search(query, k=k)
         for source in results:
@@ -85,7 +88,7 @@ class CLI:
         if k <= 0:
             raise ValueError("k must be greater than zero")
         input_path = Path(dataset_path)
-        index = BM25IndexStrategy(path=Path(index_path))
+        index = self._create_index(path=Path(index_path))
         index.load()
 
         rag_dataset = RagDataset.model_validate(
@@ -124,6 +127,19 @@ class CLI:
     ) -> None:
         """Evaluate search results against a ground-truth dataset."""
         run_evaluate(student_search_results_path, dataset_path, k)
+
+    def _create_index(self, path: Path) -> IndexStrategy:
+        return HybridIndexStrategy(
+            path=path,
+            strategies=[
+                WeightedStrategy(
+                    index=BM25IndexStrategy(path=path),
+                    weight=1.0 
+                )
+            ]
+        )
+
+
 
 
 def main() -> None:

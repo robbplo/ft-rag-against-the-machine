@@ -10,6 +10,13 @@ class MinimalSource(BaseModel):
     last_character_index: int
     content: str = ""
 
+    def hashcode(self) -> int:
+        return hash(
+            str(self.file_path)
+            + str(self.first_character_index)
+            + str(self.last_character_index)
+        )
+
 
 class UnansweredQuestion(BaseModel):
     question_id: str = Field(default_factory=lambda: str(uuid.uuid4()))

@@ -2,13 +2,11 @@
 
 import json
 from pathlib import Path
-
 import Stemmer  # ty:ignore[unresolved-import]
 from bm25s import BM25
 from bm25s.tokenization import tokenize
 from pydantic import PrivateAttr
-
-from src.index.index import IndexStrategy
+from src.index.index_strategy import IndexStrategy
 from src.models import MinimalSource
 
 
