@@ -1,4 +1,5 @@
 """Command-line entrypoint for the RAG pipeline."""
+from src.index.tfidf_index_strategy import TFIDFIndexStrategy
 from src.index.weighted_strategy import WeightedStrategy
 from src.index.hybrid_index_strategy import HybridIndexStrategy
 from src.index.index_strategy import IndexStrategy
@@ -20,7 +21,7 @@ from src.source_loader import SourceLoader
 
 
 DEFAULT_CORPUS_PATH = Path("data/raw/vllm-0.10.1")
-DEFAULT_INDEX_PATH = Path("data/processed/bm25_index")
+DEFAULT_INDEX_PATH = Path("data/index/bm25_index")
 DEFAULT_UNANSWERED_DATASET_PATH = Path(
     "data/datasets/UnansweredQuestions/dataset_docs_public.json"
 )
@@ -132,8 +133,12 @@ class CLI:
         return HybridIndexStrategy(
             path=path,
             strategies=[
+                # WeightedStrategy(
+                #     index=BM25IndexStrategy(path=path / 'bm25'),
+                #     weight=1.0 
+                # )
                 WeightedStrategy(
-                    index=BM25IndexStrategy(path=path),
+                    index=TFIDFIndexStrategy(path=path / 'tfidf'),
                     weight=1.0 
                 )
             ]
