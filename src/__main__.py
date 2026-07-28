@@ -145,7 +145,7 @@ class CLI:
             strategies=[
                 WeightedStrategy(
                     index=BM25IndexStrategy(path=path / "bm25"),
-                    weight=1.0,
+                    weight=0.925,
                 ),
                 WeightedStrategy(
                     index=SemanticIndexStrategy(
