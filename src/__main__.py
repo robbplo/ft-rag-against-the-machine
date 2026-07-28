@@ -1,8 +1,4 @@
 """Command-line entrypoint for the RAG pipeline."""
-from src.index.tfidf_index_strategy import TFIDFIndexStrategy
-from src.index.weighted_strategy import WeightedStrategy
-from src.index.hybrid_index_strategy import HybridIndexStrategy
-from src.index.index_strategy import IndexStrategy
 
 import json
 from pathlib import Path
@@ -11,6 +7,10 @@ import fire
 
 from src.evaluator import evaluate as run_evaluate
 from src.index.bm25_index_strategy import BM25IndexStrategy
+from src.index.hybrid_index_strategy import HybridIndexStrategy
+from src.index.index_strategy import IndexStrategy
+from src.index.semantic_index_strategy import SemanticIndexStrategy
+from src.index.weighted_strategy import WeightedStrategy
 from src.models import (
     MinimalSearchResults,
     RagDataset,
@@ -44,12 +44,18 @@ class CLI:
         max_chunk_size: int = 2000,
         corpus_path: str = str(DEFAULT_CORPUS_PATH),
         index_path: str = str(DEFAULT_INDEX_PATH),
+        embedding_batch_size: int = 32,
     ) -> None:
         """Chunk and index the configured source corpus."""
         if max_chunk_size <= 0 or max_chunk_size > 2000:
             raise ValueError("max_chunk_size must be between 1 and 2000")
+        if embedding_batch_size <= 0:
+            raise ValueError("embedding_batch_size must be greater than zero")
         source_loader = SourceLoader(Path(corpus_path))
-        index = self._create_index(path=Path(index_path))
+        index = self._create_index(
+            path=Path(index_path),
+            embedding_batch_size=embedding_batch_size,
+        )
         index.generate(
             max_chunk_size,
             source_loader.getSources(max_chunk_size),
@@ -129,22 +135,27 @@ class CLI:
         """Evaluate search results against a ground-truth dataset."""
         run_evaluate(student_search_results_path, dataset_path, k)
 
-    def _create_index(self, path: Path) -> IndexStrategy:
+    def _create_index(
+        self,
+        path: Path,
+        embedding_batch_size: int = 32,
+    ) -> IndexStrategy:
         return HybridIndexStrategy(
             path=path,
             strategies=[
-                # WeightedStrategy(
-                #     index=BM25IndexStrategy(path=path / 'bm25'),
-                #     weight=1.0 
-                # )
                 WeightedStrategy(
-                    index=TFIDFIndexStrategy(path=path / 'tfidf'),
-                    weight=1.0 
-                )
-            ]
+                    index=BM25IndexStrategy(path=path / "bm25"),
+                    weight=1.0,
+                ),
+                WeightedStrategy(
+                    index=SemanticIndexStrategy(
+                        path=path / "semantic",
+                        batch_size=embedding_batch_size,
+                    ),
+                    weight=0.075,
+                ),
+            ],
         )
-
-
 
 
 def main() -> None:
