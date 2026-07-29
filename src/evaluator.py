@@ -1,3 +1,4 @@
+from tqdm import tqdm
 from pathlib import Path
 from src.models import (
     AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults
@@ -27,7 +28,7 @@ def evaluate(
     recall_sums: dict[int, float] = {kv: 0.0 for kv in k_values}
     n_evaluated = 0
 
-    for result in student_data.search_results:
+    for result in tqdm(student_data.search_results, "Evaluating results"):
         qid = result.question_id
         if qid not in gt_lookup:
             continue

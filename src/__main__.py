@@ -1,5 +1,5 @@
 """Command-line entrypoint for the RAG pipeline."""
-
+from tqdm import tqdm
 import json
 from pathlib import Path
 
@@ -44,18 +44,12 @@ class CLI:
         max_chunk_size: int = 2000,
         corpus_path: str = str(DEFAULT_CORPUS_PATH),
         index_path: str = str(DEFAULT_INDEX_PATH),
-        embedding_batch_size: int = 32,
     ) -> None:
         """Chunk and index the configured source corpus."""
         if max_chunk_size <= 0 or max_chunk_size > 2000:
             raise ValueError("max_chunk_size must be between 1 and 2000")
-        if embedding_batch_size <= 0:
-            raise ValueError("embedding_batch_size must be greater than zero")
         source_loader = SourceLoader(Path(corpus_path))
-        index = self._create_index(
-            path=Path(index_path),
-            embedding_batch_size=embedding_batch_size,
-        )
+        index = self._create_index(path=Path(index_path))
         index.generate(
             max_chunk_size,
             source_loader.getSources(max_chunk_size),
@@ -102,7 +96,7 @@ class CLI:
             json.loads(input_path.read_text())
         )
         search_results = []
-        for question in rag_dataset.rag_questions:
+        for question in tqdm(rag_dataset.rag_questions, "Searching dataset"):
             sources = index.search(question.question, k=k)
             search_results.append(
                 MinimalSearchResults(
@@ -138,7 +132,6 @@ class CLI:
     def _create_index(
         self,
         path: Path,
-        embedding_batch_size: int = 32,
     ) -> IndexStrategy:
         return HybridIndexStrategy(
             path=path,
@@ -150,7 +143,6 @@ class CLI:
                 WeightedStrategy(
                     index=SemanticIndexStrategy(
                         path=path / "semantic",
-                        batch_size=embedding_batch_size,
                     ),
                     weight=0.075,
                 ),

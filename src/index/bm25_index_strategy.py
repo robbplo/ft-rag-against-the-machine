@@ -28,7 +28,7 @@ class BM25IndexStrategy(IndexStrategy):
         corpus = [source.content for source in sources]
         corpus_tokens = tokenize(corpus, stemmer=self._stemmer)
         retriever = BM25()
-        retriever.index(corpus_tokens)
+        retriever.index(corpus_tokens, leave_progress=True)
         retriever.save(self.path)
         self._sources_path().write_text(
             json.dumps(
