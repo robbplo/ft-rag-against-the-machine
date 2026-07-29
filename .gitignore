@@ -1,5 +1,5 @@
 data/vllm-0.10.1
 data/output
-data/index
+data/processed
 data/raw
 **/__pycache__

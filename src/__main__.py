@@ -21,7 +21,7 @@ from src.source_loader import SourceLoader
 
 
 DEFAULT_CORPUS_PATH = Path("data/raw/vllm-0.10.1")
-DEFAULT_INDEX_PATH = Path("data/index/bm25_index")
+DEFAULT_INDEX_PATH = Path("data/processed/bm25_index")
 DEFAULT_UNANSWERED_DATASET_PATH = Path(
     "data/datasets/UnansweredQuestions/dataset_docs_public.json"
 )
