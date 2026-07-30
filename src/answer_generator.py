@@ -1,5 +1,5 @@
 from langchain_core.documents import Document
-from typing import Iterator, Any
+from typing import Iterator, Any, cast
 from langchain_core.retrievers import RetrieverLike
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
@@ -8,6 +8,8 @@ from langchain_core.runnables import RunnablePassthrough, RunnableSerializable
 from transformers import (
     AutoConfig, AutoModelForCausalLM, GenerationConfig, pipeline
 )
+
+DEFAULT_CONTEXT_TOKEN_BUDGET = 24_000
 
 PROMPT_TEMPLATE = """<|im_start|>system
 You are a vLLM codebase expert answering questions using only the provided code
@@ -61,9 +63,13 @@ def format_docs(docs: list[Document]) -> str:
 
 
 class AnswerGenerator:
-    def __init__(self, model_id: str, retriever: RetrieverLike) -> None:
+    def __init__(
+        self,
+        model_id: str,
+        retriever: RetrieverLike | None = None,
+    ) -> None:
         """Load a generation model and configure it with a retriever."""
-        self.retriever: RetrieverLike = retriever
+        self.retriever = retriever
         model_config = AutoConfig.from_pretrained(model_id)
         model_config.tie_word_embeddings = False
         model = AutoModelForCausalLM.from_pretrained(
@@ -82,6 +88,8 @@ class AnswerGenerator:
 
     def stream(self, question: str) -> Iterator[str]:
         """Stream an answer using the retriever to fetch context."""
+        if self.retriever is None:
+            raise ValueError("A retriever is required to stream answers")
         prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         chain: RunnableSerializable[Any, str] = (
             {
@@ -96,7 +104,7 @@ class AnswerGenerator:
 
     def answer(self, question: str, context_docs: list[str]) -> str:
         """Generate an answer given pre-retrieved document content strings."""
-        formatted = "\n\n".join(context_docs)
+        formatted = self._limited_context(context_docs)
         prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
         chain = (
             prompt
@@ -104,3 +112,20 @@ class AnswerGenerator:
             | StrOutputParser()
         )
         return chain.invoke({"documents": formatted, "question": question})
+
+    def _limited_context(self, context_docs: list[str]) -> str:
+        """Fit retrieved text into the model's reserved prompt-token budget."""
+        context = "\n\n".join(context_docs)
+        tokenizer: Any = self.pipe.tokenizer
+        if tokenizer is None:
+            raise RuntimeError("The text-generation pipeline has no tokenizer")
+        token_ids = tokenizer.encode(
+            context,
+            add_special_tokens=False,
+            truncation=True,
+            max_length=DEFAULT_CONTEXT_TOKEN_BUDGET,
+        )
+        return cast(
+            str,
+            tokenizer.decode(token_ids, skip_special_tokens=True),
+        )

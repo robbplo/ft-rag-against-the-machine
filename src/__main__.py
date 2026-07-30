@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 import fire
 
+from src.answer_generator import AnswerGenerator
 from src.evaluator import evaluate as run_evaluate
 from src.index.bm25_index_strategy import BM25IndexStrategy
 from src.index.hybrid_index_strategy import HybridIndexStrategy
@@ -16,9 +17,11 @@ from src.index.index_strategy import IndexStrategy
 # from src.index.semantic_index_strategy import SemanticIndexStrategy
 from src.index.weighted_strategy import WeightedStrategy
 from src.models import (
+    MinimalAnswer,
     MinimalSearchResults,
     RagDataset,
     StudentSearchResults,
+    StudentSearchResultsAndAnswer,
 )
 from src.output import dataset_output_path, write_json_output
 from src.source_loader import SourceLoader
@@ -33,6 +36,10 @@ DEFAULT_ANSWERED_DATASET_PATH = Path(
     "data/datasets/AnsweredQuestions/dataset_docs_public.json"
 )
 DEFAULT_SEARCH_RESULTS_DIRECTORY = Path("data/output/search_results")
+DEFAULT_ANSWER_RESULTS_DIRECTORY = Path(
+    "data/output/search_results_and_answer"
+)
+DEFAULT_MODEL_ID = "Qwen/Qwen3-0.6B"
 DEFAULT_STUDENT_SEARCH_RESULTS_PATH = (
     DEFAULT_SEARCH_RESULTS_DIRECTORY
     / "UnansweredQuestions"
@@ -121,13 +128,62 @@ class CLI:
         print(f"Saved student_search_results to {output_path}")
         return str(output_path)
 
-    def answer(self) -> None:
+    def answer(
+        self,
+        query: str,
+        k: int = 10,
+        index_path: str = str(DEFAULT_INDEX_PATH),
+        model_id: str = DEFAULT_MODEL_ID,
+    ) -> None:
         """Generate an answer for one question."""
-        pass
+        _validate_query(query)
+        _validate_k(k)
+        index = self._load_index(Path(index_path))
+        sources = index.search(query, k=k)
+        generator = AnswerGenerator(model_id)
+        print(generator.answer(query, [source.content for source in sources]))
 
-    def answer_dataset(self) -> None:
+    def answer_dataset(
+        self,
+        student_search_results_path: str = str(
+            DEFAULT_STUDENT_SEARCH_RESULTS_PATH
+        ),
+        save_directory: str = str(DEFAULT_ANSWER_RESULTS_DIRECTORY),
+        model_id: str = DEFAULT_MODEL_ID,
+    ) -> str:
         """Generate answers for every question in a dataset."""
-        pass
+        input_path = Path(student_search_results_path)
+        student_results = _load_search_results(input_path)
+        generator = AnswerGenerator(model_id)
+        answers = []
+        for result in tqdm(
+            student_results.search_results,
+            "Generating answers",
+        ):
+            _validate_query(result.question, result.question_id)
+            answers.append(
+                MinimalAnswer(
+                    question_id=result.question_id,
+                    question=result.question,
+                    retrieved_sources=result.retrieved_sources,
+                    answer=generator.answer(
+                        result.question,
+                        [
+                            source.content
+                            for source in result.retrieved_sources
+                        ],
+                    ),
+                )
+            )
+
+        output = StudentSearchResultsAndAnswer(
+            search_results=answers,
+            k=student_results.k,
+        )
+        output_path = dataset_output_path(input_path, Path(save_directory))
+        write_json_output(output, output_path)
+        print(f"Saved student_search_results_and_answer to {output_path}")
+        return str(output_path)
 
     def evaluate(
         self,
@@ -211,6 +267,37 @@ def _load_dataset(path: Path) -> RagDataset:
     if not dataset.rag_questions:
         raise ValueError(f"Dataset contains no questions: {path}")
     return dataset
+
+
+def _load_search_results(path: Path) -> StudentSearchResults:
+    """Read and validate non-empty retrieved sources from JSON."""
+    if not path.is_file():
+        raise FileNotFoundError(
+            "Search-results file does not exist: "
+            f"{path}. Check --student_search_results_path."
+        )
+    try:
+        raw_results = json.loads(path.read_text())
+    except JSONDecodeError as error:
+        raise ValueError(
+            f"Search-results JSON is malformed: {path}: {error.msg}"
+        ) from error
+    except OSError as error:
+        raise OSError(
+            f"Could not read search results {path}: {error}"
+        ) from error
+
+    try:
+        results = StudentSearchResults.model_validate(raw_results)
+    except ValidationError as error:
+        raise ValueError(
+            "Search results have invalid fields: "
+            f"{path}: {error.errors()[0]['msg']}"
+        ) from error
+    _validate_k(results.k)
+    if not results.search_results:
+        raise ValueError(f"Search results contain no questions: {path}")
+    return results
 
 
 def _validate_k(k: int) -> None:

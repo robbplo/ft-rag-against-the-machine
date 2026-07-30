@@ -15,8 +15,7 @@ from src.models import MinimalSource
 
 
 DEFAULT_EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
-EMBEDDING_DEVICE = "mps"
-EMBEDDING_QUERY_PROMPT_NAME = None
+EMBEDDING_DEVICE = "cpu"
 
 
 class SemanticIndexManifest(BaseModel):
@@ -122,7 +121,6 @@ class SemanticIndexStrategy(IndexStrategy):
         query_embedding = np.asarray(
             self._model.encode(
                 query,
-                prompt_name=EMBEDDING_QUERY_PROMPT_NAME,
                 batch_size=1,
                 convert_to_numpy=True,
                 normalize_embeddings=True,
