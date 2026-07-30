@@ -118,10 +118,10 @@ class CLI:
         print(f"Saved student_search_results to {output_path}")
         return str(output_path)
 
-    def answer(self):
+    def answer(self) -> None:
         pass
 
-    def answer_dataset(self):
+    def answer_dataset(self) -> None:
         pass
 
     def evaluate(

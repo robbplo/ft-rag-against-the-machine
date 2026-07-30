@@ -15,7 +15,7 @@ clean:
 
 lint:
 	uv run flake8 . --exclude .venv,data
-	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	uv run mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs --exclude data
 
 make run-index:
 	uv run -m src index

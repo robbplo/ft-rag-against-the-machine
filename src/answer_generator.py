@@ -1,8 +1,10 @@
+from langchain_core.documents import Document
+from typing import Iterator, Any
 from langchain_core.retrievers import RetrieverLike
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough, RunnableSerializable
 from transformers import (
     AutoConfig, AutoModelForCausalLM, GenerationConfig, pipeline
 )
@@ -53,12 +55,12 @@ Code samples:
 """
 
 
-def format_docs(docs):
+def format_docs(docs: list[Document]) -> str:
     return "\n\n".join(d.page_content for d in docs)
 
 
 class AnswerGenerator:
-    def __init__(self, model_id: str, retriever: RetrieverLike):
+    def __init__(self, model_id: str, retriever: RetrieverLike) -> None:
         self.retriever: RetrieverLike = retriever
         model_config = AutoConfig.from_pretrained(model_id)
         model_config.tie_word_embeddings = False
@@ -76,10 +78,10 @@ class AnswerGenerator:
         generation_config.max_new_tokens = 1024
         generation_config.do_sample = False
 
-    def stream(self, question: str):
+    def stream(self, question: str) -> Iterator[str]:
         """Stream an answer using the retriever to fetch context."""
         prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
-        chain = (
+        chain: RunnableSerializable[Any, str] = (
             {
                 "documents": self.retriever | format_docs,
                 "question": RunnablePassthrough()
