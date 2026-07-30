@@ -84,7 +84,6 @@ class AnswerGenerator:
         generation_config: GenerationConfig = self.pipe.generation_config
         generation_config.max_length = None
         generation_config.max_new_tokens = 1024
-        generation_config.do_sample = False
 
     def stream(self, question: str, context_docs: list[str]) -> Iterator[str]:
         """Stream an answer using the retriever to fetch context."""

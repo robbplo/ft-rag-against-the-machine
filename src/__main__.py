@@ -145,10 +145,10 @@ class CLI:
         print("loading model")
         generator = AnswerGenerator(model_id)
         print("starting answer stream")
-        print(generator.answer(query, [source.content for source in sources]))
-        # stream = generator.stream(query, [source.content for source in sources])
-        # for token in stream:
-        #     print(token, end=None)
+        # print(generator.answer(query, [source.content for source in sources]))
+        stream = generator.stream(query, [source.content for source in sources])
+        for token in stream:
+            print(token, end='', flush=True)
 
     def answer_dataset(
         self,
