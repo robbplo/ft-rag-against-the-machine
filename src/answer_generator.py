@@ -5,12 +5,9 @@ from langchain_core.retrievers import RetrieverLike
 from langchain_huggingface import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough, RunnableSerializable
 from transformers import (
     AutoConfig, AutoModelForCausalLM, GenerationConfig, pipeline
 )
-
-DEFAULT_CONTEXT_TOKEN_BUDGET = 24_000
 
 PROMPT_TEMPLATE = """<|im_start|>system
 You are a vLLM codebase expert answering questions using only the provided code
@@ -97,7 +94,10 @@ class AnswerGenerator:
             | HuggingFacePipeline(pipeline=self.pipe)
             | StrOutputParser()
         )
-        return chain.stream({"documents": formatted, "question": question})
+        return cast(
+                Iterator[str],
+                chain.stream({"documents": formatted, "question": question})
+                )
 
     def answer(self, question: str, context_docs: list[str]) -> str:
         """Generate an answer given pre-retrieved document content strings."""
@@ -108,7 +108,10 @@ class AnswerGenerator:
             | HuggingFacePipeline(pipeline=self.pipe)
             | StrOutputParser()
         )
-        return chain.invoke({"documents": formatted, "question": question})
+        return cast(
+                str,
+                chain.invoke({"documents": formatted, "question": question})
+                )
 
     def _limited_context(self, context_docs: list[str]) -> str:
         """Fit retrieved text into the model's reserved prompt-token budget."""
@@ -119,8 +122,7 @@ class AnswerGenerator:
         token_ids = tokenizer.encode(
             context,
             add_special_tokens=False,
-            truncation=True,
-            max_length=DEFAULT_CONTEXT_TOKEN_BUDGET,
+            truncation=True
         )
         return cast(
             str,

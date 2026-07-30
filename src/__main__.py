@@ -14,7 +14,7 @@ from src.evaluator import evaluate as run_evaluate
 from src.index.bm25_index_strategy import BM25IndexStrategy
 from src.index.hybrid_index_strategy import HybridIndexStrategy
 from src.index.index_strategy import IndexStrategy
-from src.index.semantic_index_strategy import SemanticIndexStrategy
+# from src.index.semantic_index_strategy import SemanticIndexStrategy
 from src.index.weighted_strategy import WeightedStrategy
 from src.models import (
     MinimalAnswer,
@@ -138,15 +138,12 @@ class CLI:
         """Generate an answer for one question."""
         _validate_query(query)
         _validate_k(k)
-        print("loading index")
         index = self._load_index(Path(index_path))
-        print("searching index")
         sources = index.search(query, k=k)
-        print("loading model")
         generator = AnswerGenerator(model_id)
-        print("starting answer stream")
-        # print(generator.answer(query, [source.content for source in sources]))
-        stream = generator.stream(query, [source.content for source in sources])
+        stream = generator.stream(
+                query, [source.content for source in sources]
+                )
         for token in stream:
             print(token, end='', flush=True)
 
@@ -271,7 +268,7 @@ def _load_dataset(path: Path) -> RagDataset:
         raise ValueError(
             f"Dataset has invalid fields: {path}: {error.errors()[0]['msg']}"
         ) from error
-    if not dataset.rag_questions:
+    if not dataset.rag_questions or not isinstance(dataset, RagDataset):
         raise ValueError(f"Dataset contains no questions: {path}")
     return dataset
 
@@ -302,7 +299,8 @@ def _load_search_results(path: Path) -> StudentSearchResults:
             f"{path}: {error.errors()[0]['msg']}"
         ) from error
     _validate_k(results.k)
-    if not results.search_results:
+    if (not results.search_results or
+            not isinstance(results, StudentSearchResults)):
         raise ValueError(f"Search results contain no questions: {path}")
     return results
 
