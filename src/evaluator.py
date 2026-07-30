@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from pathlib import Path
 from src.models import (
-    AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults, MinimalSearchResults
+    AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults
 )
 import json
 
@@ -11,7 +11,9 @@ def evaluate(
     dataset_path: str,
     k: int = 10,
 ) -> None:
-    """Evaluate search results against ground truth using recall@k metric."""
+    """
+    Evaluate search results against correct answers using recall@k metric.
+    """
     student_data = StudentSearchResults.model_validate(
         json.loads(Path(student_answer_path).read_text())
     )
@@ -41,19 +43,7 @@ def evaluate(
             found = 0
             for cs in correct_sources:
                 for rs in retrieved:
-                    if rs.file_path != cs.file_path:
-                        continue
-                    intersection = (
-                        min(rs.last_character_index, cs.last_character_index)
-                        - max(rs.first_character_index, cs.first_character_index)
-                    )
-                    if intersection <= 0:
-                        continue
-                    correct_len = cs.last_character_index - cs.first_character_index
-                    retrieved_len = rs.last_character_index - rs.first_character_index
-                    union = correct_len + retrieved_len - intersection
-                    
-                    if union > 0 and intersection / union >= 0.05:
+                    if calcualte_iou(cs, rs) >= 0.05:
                         found += 1
                         break
             recall_sums[kv] += found / len(correct_sources)
@@ -65,3 +55,27 @@ def evaluate(
     for kv in k_values:
         recall = recall_sums[kv] / n_evaluated if n_evaluated > 0 else 0.0
         print(f"Recall@{kv:<2}: {recall:.3f}")
+
+
+def calcualte_iou(
+        correct: MinimalSource,
+        retrieved: MinimalSource
+) -> float:
+    if retrieved.file_path != correct.file_path:
+        return -1
+    intersection = (
+        min(retrieved.last_character_index, correct.last_character_index)
+        - max(retrieved.first_character_index, correct.first_character_index)
+    )
+    if intersection <= 0:
+        return -1
+    correct_len = (
+        correct.last_character_index - correct.first_character_index
+    )
+    retrieved_len = (
+        retrieved.last_character_index - retrieved.first_character_index
+    )
+    union = correct_len + retrieved_len - intersection
+    if union <= 0:
+        return -1
+    return intersection / union

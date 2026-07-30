@@ -25,6 +25,7 @@ class BM25IndexStrategy(IndexStrategy):
         sources: list[MinimalSource],
     ) -> None:
         """Build and persist the BM25 index and source metadata."""
+        print(sources[:2])
         corpus = [source.content for source in sources]
         corpus_tokens = tokenize(corpus, stemmer=self._stemmer)
         retriever = BM25()

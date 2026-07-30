@@ -1,8 +1,8 @@
 from src.models import MinimalSource
-from enum import auto, StrEnum
 from abc import abstractmethod
 from pathlib import Path
 from pydantic import BaseModel
+
 
 class IndexStrategy(BaseModel):
     path: Path

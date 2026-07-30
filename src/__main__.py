@@ -9,7 +9,7 @@ from src.evaluator import evaluate as run_evaluate
 from src.index.bm25_index_strategy import BM25IndexStrategy
 from src.index.hybrid_index_strategy import HybridIndexStrategy
 from src.index.index_strategy import IndexStrategy
-from src.index.semantic_index_strategy import SemanticIndexStrategy
+# from src.index.semantic_index_strategy import SemanticIndexStrategy
 from src.index.weighted_strategy import WeightedStrategy
 from src.models import (
     MinimalSearchResults,
@@ -117,6 +117,12 @@ class CLI:
         write_json_output(output, output_path)
         print(f"Saved student_search_results to {output_path}")
         return str(output_path)
+
+    def answer(self):
+        pass
+
+    def answer_dataset(self):
+        pass
 
     def evaluate(
         self,
