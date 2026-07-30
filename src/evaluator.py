@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from pathlib import Path
 from src.models import (
-    AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults
+    AnsweredQuestion, MinimalSource, RagDataset, StudentSearchResults, MinimalSearchResults
 )
 import json
 
@@ -43,14 +43,17 @@ def evaluate(
                 for rs in retrieved:
                     if rs.file_path != cs.file_path:
                         continue
-                    overlap = (
+                    intersection = (
                         min(rs.last_character_index, cs.last_character_index)
                         - max(rs.first_character_index, cs.first_character_index)
                     )
-                    if overlap <= 0:
+                    if intersection <= 0:
                         continue
                     correct_len = cs.last_character_index - cs.first_character_index
-                    if correct_len > 0 and overlap / correct_len >= 0.05:
+                    retrieved_len = rs.last_character_index - rs.first_character_index
+                    union = correct_len + retrieved_len - intersection
+                    
+                    if union > 0 and intersection / union >= 0.05:
                         found += 1
                         break
             recall_sums[kv] += found / len(correct_sources)
