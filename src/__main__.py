@@ -1,7 +1,11 @@
 """Command-line entrypoint for the RAG pipeline."""
-from tqdm import tqdm
+from json import JSONDecodeError
 import json
 from pathlib import Path
+import sys
+
+from pydantic import ValidationError
+from tqdm import tqdm
 
 import fire
 
@@ -48,11 +52,17 @@ class CLI:
         """Chunk and index the configured source corpus."""
         if max_chunk_size <= 0 or max_chunk_size > 2000:
             raise ValueError("max_chunk_size must be between 1 and 2000")
-        source_loader = SourceLoader(Path(corpus_path))
+        corpus = _existing_directory(Path(corpus_path), "Corpus")
+        source_loader = SourceLoader(corpus)
+        sources = source_loader.getSources(max_chunk_size)
+        if not sources:
+            raise ValueError(
+                f"Corpus is empty or has no supported files: {corpus}"
+            )
         index = self._create_index(path=Path(index_path))
         index.generate(
             max_chunk_size,
-            source_loader.getSources(max_chunk_size),
+            sources,
         )
 
     def search(
@@ -62,12 +72,9 @@ class CLI:
         index_path: str = str(DEFAULT_INDEX_PATH),
     ) -> None:
         """Print the top-k sources for one query."""
-        if not query.strip():
-            raise ValueError("query must not be empty")
-        if k <= 0:
-            raise ValueError("k must be greater than zero")
-        index = self._create_index(path=Path(index_path))
-        index.load()
+        _validate_query(query)
+        _validate_k(k)
+        index = self._load_index(Path(index_path))
         results = index.search(query, k=k)
         for source in results:
             print(
@@ -86,17 +93,13 @@ class CLI:
         index_path: str = str(DEFAULT_INDEX_PATH),
     ) -> str:
         """Search a dataset and write evaluator-compatible JSON."""
-        if k <= 0:
-            raise ValueError("k must be greater than zero")
+        _validate_k(k)
         input_path = Path(dataset_path)
-        index = self._create_index(path=Path(index_path))
-        index.load()
-
-        rag_dataset = RagDataset.model_validate(
-            json.loads(input_path.read_text())
-        )
+        rag_dataset = _load_dataset(input_path)
+        index = self._load_index(Path(index_path))
         search_results = []
         for question in tqdm(rag_dataset.rag_questions, "Searching dataset"):
+            _validate_query(question.question, question.question_id)
             sources = index.search(question.question, k=k)
             search_results.append(
                 MinimalSearchResults(
@@ -135,6 +138,7 @@ class CLI:
         k: int = 10,
     ) -> None:
         """Evaluate search results against a ground-truth dataset."""
+        _validate_k(k)
         run_evaluate(student_search_results_path, dataset_path, k)
 
     def _create_index(
@@ -158,10 +162,87 @@ class CLI:
             ],
         )
 
+    def _load_index(self, path: Path) -> IndexStrategy:
+        """Load the configured index or raise an actionable error."""
+        _existing_directory(path, "Index")
+        try:
+            index = self._create_index(path=path)
+            index.load()
+        except (OSError, ValueError) as error:
+            raise ValueError(
+                f"Could not load index at {path}. Rebuild it with 'index': "
+                f"{error}"
+            ) from error
+        return index
+
+
+def _existing_directory(path: Path, label: str) -> Path:
+    """Validate that an input directory exists and is accessible."""
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{label} directory does not exist: {path}. Check the path."
+        )
+    if not path.is_dir():
+        raise ValueError(f"{label} path is not a directory: {path}")
+    return path
+
+
+def _load_dataset(path: Path) -> RagDataset:
+    """Read and validate a non-empty RAG dataset from JSON."""
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Dataset file does not exist: {path}. Check --dataset_path."
+        )
+    try:
+        raw_dataset = json.loads(path.read_text())
+    except JSONDecodeError as error:
+        raise ValueError(
+            f"Dataset JSON is malformed: {path}: {error.msg}"
+        ) from error
+    except OSError as error:
+        raise OSError(f"Could not read dataset {path}: {error}") from error
+
+    try:
+        dataset = RagDataset.model_validate(raw_dataset)
+    except ValidationError as error:
+        raise ValueError(
+            f"Dataset has invalid fields: {path}: {error.errors()[0]['msg']}"
+        ) from error
+    if not dataset.rag_questions:
+        raise ValueError(f"Dataset contains no questions: {path}")
+    return dataset
+
+
+def _validate_k(k: int) -> None:
+    """Require a positive number of retrieved results."""
+    if k <= 0:
+        raise ValueError("k must be greater than zero")
+
+
+def _validate_query(query: str, question_id: str | None = None) -> None:
+    """Reject empty or punctuation-only questions before retrieval."""
+    subject = f"Question {question_id}" if question_id else "Query"
+    if not query.strip():
+        raise ValueError(f"{subject} must not be empty")
+    if not any(character.isalnum() for character in query):
+        raise ValueError(f"{subject} must contain letters or numbers")
+
+
+def _print_error(error: Exception) -> None:
+    """Print a concise CLI error message without a traceback."""
+    print(f"Error: {error}", file=sys.stderr)
+
 
 def main() -> None:
     """Run the Python Fire command-line interface."""
-    fire.Fire(CLI)
+    try:
+        fire.Fire(CLI)
+    except (FileNotFoundError, OSError, ValidationError, ValueError) as error:
+        _print_error(error)
+        raise SystemExit(1) from None
+    except Exception as error:
+        _print_error(error)
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
