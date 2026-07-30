@@ -56,11 +56,13 @@ Code samples:
 
 
 def format_docs(docs: list[Document]) -> str:
+    """Join retrieved document content for insertion into the prompt."""
     return "\n\n".join(d.page_content for d in docs)
 
 
 class AnswerGenerator:
     def __init__(self, model_id: str, retriever: RetrieverLike) -> None:
+        """Load a generation model and configure it with a retriever."""
         self.retriever: RetrieverLike = retriever
         model_config = AutoConfig.from_pretrained(model_id)
         model_config.tie_word_embeddings = False

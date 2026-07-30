@@ -119,9 +119,11 @@ class CLI:
         return str(output_path)
 
     def answer(self) -> None:
+        """Generate an answer for one question."""
         pass
 
     def answer_dataset(self) -> None:
+        """Generate answers for every question in a dataset."""
         pass
 
     def evaluate(
@@ -139,6 +141,7 @@ class CLI:
         self,
         path: Path,
     ) -> IndexStrategy:
+        """Create the configured hybrid retrieval index at ``path``."""
         return HybridIndexStrategy(
             path=path,
             strategies=[

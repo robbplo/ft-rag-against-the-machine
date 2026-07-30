@@ -11,6 +11,7 @@ class MinimalSource(BaseModel):
     content: str = ""
 
     def hashcode(self) -> int:
+        """Return a stable hash for this source location."""
         return hash(
             str(self.file_path)
             + str(self.first_character_index)

@@ -61,4 +61,5 @@ class BM25IndexStrategy(IndexStrategy):
         return list(results[0])
 
     def _sources_path(self) -> Path:
+        """Return the path used to persist source metadata."""
         return self.path / "sources.json"

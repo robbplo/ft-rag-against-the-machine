@@ -144,10 +144,13 @@ class SemanticIndexStrategy(IndexStrategy):
         return self._model
 
     def _embeddings_path(self) -> Path:
+        """Return the path used to persist source embeddings."""
         return self.path / "embeddings.npy"
 
     def _sources_path(self) -> Path:
+        """Return the path used to persist source metadata."""
         return self.path / "sources.json"
 
     def _manifest_path(self) -> Path:
+        """Return the path used to persist index configuration metadata."""
         return self.path / "manifest.json"

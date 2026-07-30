@@ -61,6 +61,7 @@ def calcualte_iou(
         correct: MinimalSource,
         retrieved: MinimalSource
 ) -> float:
+    """Calculate overlapping character span IoU for matching source files."""
     if retrieved.file_path != correct.file_path:
         return -1
     intersection = (

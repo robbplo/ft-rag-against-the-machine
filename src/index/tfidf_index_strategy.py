@@ -192,7 +192,9 @@ class TFIDFIndexStrategy(IndexStrategy):
         ]
 
     def _sources_path(self) -> Path:
+        """Return the path used to persist source metadata."""
         return self.path / "sources.json"
 
     def _index_path(self) -> Path:
+        """Return the path used to persist TF-IDF index state."""
         return self.path / "index.json"
