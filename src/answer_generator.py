@@ -1,3 +1,4 @@
+import torch
 from langchain_core.documents import Document
 from typing import Iterator, Any, cast
 from langchain_core.retrievers import RetrieverLike
@@ -73,7 +74,9 @@ class AnswerGenerator:
         model_config = AutoConfig.from_pretrained(model_id)
         model_config.tie_word_embeddings = False
         model = AutoModelForCausalLM.from_pretrained(
-            model_id, config=model_config
+            model_id,
+            config=model_config,
+            dtype=torch.float32
         )
 
         self.pipe = pipeline(

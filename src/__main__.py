@@ -131,7 +131,7 @@ class CLI:
     def answer(
         self,
         query: str,
-        k: int = 10,
+        k: int = 5,
         index_path: str = str(DEFAULT_INDEX_PATH),
         model_id: str = DEFAULT_MODEL_ID,
     ) -> None:
@@ -329,14 +329,14 @@ def _print_error(error: Exception) -> None:
 
 def main() -> None:
     """Run the Python Fire command-line interface."""
-    # try:
-    fire.Fire(CLI)
-    # except (FileNotFoundError, OSError, ValidationError, ValueError) as error:
-    #     _print_error(error)
-    #     raise SystemExit(1) from None
-    # except Exception as error:
-    #     _print_error(error)
-    #     raise SystemExit(1) from None
+    try:
+        fire.Fire(CLI)
+    except (FileNotFoundError, OSError, ValidationError, ValueError) as error:
+        _print_error(error)
+        raise SystemExit(1) from None
+    except Exception as error:
+        _print_error(error)
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
