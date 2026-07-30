@@ -86,21 +86,16 @@ class AnswerGenerator:
         generation_config.max_new_tokens = 1024
         generation_config.do_sample = False
 
-    def stream(self, question: str) -> Iterator[str]:
+    def stream(self, question: str, context_docs: list[str]) -> Iterator[str]:
         """Stream an answer using the retriever to fetch context."""
-        if self.retriever is None:
-            raise ValueError("A retriever is required to stream answers")
+        formatted = self._limited_context(context_docs)
         prompt = PromptTemplate.from_template(PROMPT_TEMPLATE)
-        chain: RunnableSerializable[Any, str] = (
-            {
-                "documents": self.retriever | format_docs,
-                "question": RunnablePassthrough()
-            }
-            | prompt
+        chain = (
+            prompt
             | HuggingFacePipeline(pipeline=self.pipe)
             | StrOutputParser()
         )
-        return chain.stream(question)
+        return chain.stream({"documents": formatted, "question": question})
 
     def answer(self, question: str, context_docs: list[str]) -> str:
         """Generate an answer given pre-retrieved document content strings."""

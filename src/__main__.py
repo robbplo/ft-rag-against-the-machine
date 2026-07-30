@@ -14,7 +14,7 @@ from src.evaluator import evaluate as run_evaluate
 from src.index.bm25_index_strategy import BM25IndexStrategy
 from src.index.hybrid_index_strategy import HybridIndexStrategy
 from src.index.index_strategy import IndexStrategy
-# from src.index.semantic_index_strategy import SemanticIndexStrategy
+from src.index.semantic_index_strategy import SemanticIndexStrategy
 from src.index.weighted_strategy import WeightedStrategy
 from src.models import (
     MinimalAnswer,
@@ -138,10 +138,17 @@ class CLI:
         """Generate an answer for one question."""
         _validate_query(query)
         _validate_k(k)
+        print("loading index")
         index = self._load_index(Path(index_path))
+        print("searching index")
         sources = index.search(query, k=k)
+        print("loading model")
         generator = AnswerGenerator(model_id)
+        print("starting answer stream")
         print(generator.answer(query, [source.content for source in sources]))
+        # stream = generator.stream(query, [source.content for source in sources])
+        # for token in stream:
+        #     print(token, end=None)
 
     def answer_dataset(
         self,
@@ -322,14 +329,14 @@ def _print_error(error: Exception) -> None:
 
 def main() -> None:
     """Run the Python Fire command-line interface."""
-    try:
-        fire.Fire(CLI)
-    except (FileNotFoundError, OSError, ValidationError, ValueError) as error:
-        _print_error(error)
-        raise SystemExit(1) from None
-    except Exception as error:
-        _print_error(error)
-        raise SystemExit(1) from None
+    # try:
+    fire.Fire(CLI)
+    # except (FileNotFoundError, OSError, ValidationError, ValueError) as error:
+    #     _print_error(error)
+    #     raise SystemExit(1) from None
+    # except Exception as error:
+    #     _print_error(error)
+    #     raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
