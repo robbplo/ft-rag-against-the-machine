@@ -6,8 +6,8 @@
 
 This project is a local Retrieval-Augmented Generation (RAG) system for the
 vLLM codebase. It indexes source code and documentation, retrieves the most
-relevant passages for a question, and asks the Q8_0 GGUF quantization of
-`Qwen3-0.6B` to produce an answer grounded in those passages.
+relevant passages for a question, and asks `Qwen/Qwen3-0.6B` through the
+Transformers text-generation pipeline to produce a grounded answer.
 
 ## System architecture
 
@@ -26,10 +26,10 @@ vLLM files -> chunking -> BM25 index -> top-k passages -> Qwen -> answer
 
 ### Chunking strategy
 
-Code is split with language-aware separators for Python, C/C++, CUDA, and
-JavaScript. Markdown, RST, HTML, and plain text use document-oriented or
-recursive text splitting. Chunks default to 2,000 characters, overlap by 10%,
-and preserve their original character positions.
+Python code is split with language-aware separators. Markdown uses
+heading-aware separators, while plain-text files use recursive text splitting.
+Chunks default to 2,000 characters, overlap by 10%, and preserve their original
+character positions through splitter-provided start-index metadata.
 
 ### Retrieval method
 
@@ -52,8 +52,8 @@ Exact paths and character offsets are retained because evaluation matches both
 the file and overlapping source range. Separate splitters keep code structures
 and document sections more meaningful than fixed cuts. A strict 2,000-character
 limit prevents invalid evaluator output, while overlap reduces information loss
-at chunk boundaries. Model context is truncated to a fixed token budget to
-avoid exceeding Qwen's input capacity.
+at chunk boundaries. Model context is tokenized and truncated to the model's
+supported input length to avoid exceeding Qwen's input capacity.
 
 ### Challenges faced
 
@@ -69,9 +69,9 @@ avoid exceeding Qwen's input capacity.
   BM25 remains the mandatory default so the time and recall requirements are
   met; the weighted RRF abstraction allows semantic retrieval to be added
   without changing the CLI or output format.
-- **Fitting evidence into the model context:** Retrieved chunks can exceed the
-  generation budget when joined together. Context is tokenized and truncated
-  to a reserved 24,000-token budget before the prompt is sent to Qwen.
+- **Fitting evidence into the model context:** Retrieved chunks are joined,
+  tokenized, and truncated to the tokenizer's supported input length before the
+  prompt is sent to Qwen.
 
 ## Instructions
 
@@ -111,8 +111,8 @@ Using the included public results, the local evaluator reports:
 
 | Dataset | Recall@1 | Recall@3 | Recall@5 | Recall@10 |
 | --- | ---: | ---: | ---: | ---: |
-| Documentation (100 questions) | 61.0% | 77.0% | 83.0% | 88.0% |
-| Code (99 questions) | 33.3% | 45.5% | 51.5% | 57.6% |
+| Documentation (100 questions) | 61.0% | 76.0% | 84.0% | 89.0% |
+| Code (99 questions) | 33.3% | 44.4% | 54.5% | 58.6% |
 
 Both Recall@5 values meet the subject thresholds of 80% for documentation and
 50% for code. Lexical retrieval is fast and lightweight, but can miss passages
@@ -125,18 +125,18 @@ JSON output. Exact timings vary by machine.
 
 | Operation | Workload | Measured time | Subject limit |
 | --- | --- | ---: | ---: |
-| Indexing | 2,694 files / 17,966 chunks | 3.81 s | 300 s |
-| Retrieval | 200 questions at `k=10` | 5.34 s | 90 s |
+| Indexing | 1,969 files / 14,638 chunks | 3.37 s | 300 s |
+| Retrieval | 199 questions at `k=10` | 5.14 s | 90 s |
 
-The retrieval timing is the sum of two separate 100-question dataset runs, so
-index loading and process startup are included twice. This makes the comparison
+The retrieval timing is the sum of separate 100- and 99-question dataset runs,
+so index loading and process startup are included twice. This makes the comparison
 more conservative than processing all 200 questions in one invocation.
 
 ## Resources
 
 - [Retrieval-Augmented Generation paper](https://arxiv.org/abs/2005.11401)
 - [BM25 overview](https://en.wikipedia.org/wiki/Okapi_BM25)
-- [Qwen3 Q8_0 GGUF model](https://huggingface.co/unsloth/Qwen3-0.6B-GGUF)
+- [Qwen3-0.6B model](https://huggingface.co/Qwen/Qwen3-0.6B)
 - [LangChain text splitters](https://python.langchain.com/docs/concepts/text_splitters/)
 - [Pydantic documentation](https://docs.pydantic.dev/)
 

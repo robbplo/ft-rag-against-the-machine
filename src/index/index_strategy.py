@@ -5,6 +5,8 @@ from pydantic import BaseModel
 
 
 class IndexStrategy(BaseModel):
+    """Define the common interface for persisted retrieval indexes."""
+
     path: Path
 
     @abstractmethod

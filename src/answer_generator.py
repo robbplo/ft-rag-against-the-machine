@@ -61,6 +61,8 @@ def format_docs(docs: list[Document]) -> str:
 
 
 class AnswerGenerator:
+    """Generate grounded answers with a local causal language model."""
+
     def __init__(
         self,
         model_id: str,
@@ -80,6 +82,7 @@ class AnswerGenerator:
             "text-generation",
             model=model,
             tokenizer=model_id,
+            return_full_text=False,
         )
         generation_config: GenerationConfig = self.pipe.generation_config
         generation_config.max_length = None
